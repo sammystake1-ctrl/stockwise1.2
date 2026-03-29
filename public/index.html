@@ -1592,8 +1592,12 @@ async function analyze() {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Recommendation request failed');
 
+    if (!res.ok) {
+      throw new Error(data.error || 'Request failed');
+    }
+
+    // 🔥 THIS IS WHAT YOU WERE MISSING
     lastPicks = data.recommendations.map((s) => ({
       sym: s.symbol,
       name: s.name,
@@ -1609,29 +1613,18 @@ async function analyze() {
       news: s.news || []
     }));
 
-    const rl = { conservative: 'Conservative', moderate: 'Moderate', aggressive: 'Aggressive' };
-    const hl = { short: '1–2 yr', medium: '3–5 yr', long: '6–15 yr', vlong: '15+ yr' };
-
-    document.getElementById('resMeta').textContent =
-      `Age ${age} · ${rl[risk] || risk} risk · ${hl[hor] || hor} horizon · ${amt} starting`;
-
+    // update UI
     document.getElementById('fitScore').textContent =
       Math.round(lastPicks.reduce((sum, s) => sum + s.fit, 0) / lastPicks.length);
 
-    const alloc = getAlloc(risk);
-    document.getElementById('allocBar').innerHTML =
-      alloc.map(a => `<div class="bar-seg" style="width:${a.p}%;background:${a.c}"></div>`).join('');
-
-    document.getElementById('allocLeg').innerHTML =
-      alloc.map(a => `<div class="bli"><div class="bld" style="background:${a.c}"></div>${a.p}% ${a.l}</div>`).join('');
-
     renderResults();
+
     document.getElementById('results').classList.add('visible');
     document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 
   } catch (err) {
     console.error(err);
-    showToast('Could not load live recommendations right now.');
+    showToast('Failed to load recommendations');
   } finally {
     btn.classList.remove('analyzing');
     btn.disabled = false;
