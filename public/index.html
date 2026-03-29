@@ -1546,21 +1546,21 @@ function unlockPro() {
   showToast('Pro access activated — all 12 picks unlocked!');
 }
 
+<script>
 async function analyze() {
   const age = parseInt(document.getElementById('q-age').value);
   const risk = document.getElementById('q-risk').value;
   const amt = document.getElementById('q-amount').value;
   const hor = document.getElementById('q-horizon').value;
+
   if (!age || age < 18) { showToast('Please enter your age in Step 1'); showStep(1); return; }
   if (!amt) { showToast('Please enter your investment amount in Step 2'); showStep(2); return; }
   if (!risk) { showToast('Please select your risk tolerance in Step 4'); showStep(4); return; }
   if (!hor) { showToast('Please select your investment horizon in Step 3'); showStep(3); return; }
 
   const btn = document.getElementById('analyzeBtn');
-  btn.classList.add('analyzing'); btn.disabled = true;
-  // Brief perceived analysis delay — data already fetched in background on load
-  await new Promise(r => setTimeout(r, 700));
-  btn.classList.remove('analyzing'); btn.disabled = false;
+  btn.classList.add('analyzing');
+  btn.disabled = true;
 
   const wDiv = document.getElementById('q-div').value === 'yes';
   const wETF = document.getElementById('q-etf').value !== 'no';
@@ -1568,25 +1568,76 @@ async function analyze() {
   const react = document.getElementById('q-react').value || 'hold';
   const income = document.getElementById('q-income').value || '';
   const exp = document.getElementById('q-exp').value || 'beginner';
-  const avoidChips = [...document.querySelectorAll('#step6 .chips .chip.sel')].map(c => c.textContent.toLowerCase()).join(' ');
-  const profile = { risk, horizon: hor, wantDiv: wDiv, wantETF: wETF, age, goal, react, income, exp, avoid: avoidChips };
+  const avoidChips = [...document.querySelectorAll('#step6 .chips .chip.sel')]
+    .map(c => c.textContent.toLowerCase())
+    .join(' ');
 
-  lastPicks = pickStocks(profile);
+  try {
+    const res = await fetch('/api/recommendations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        age,
+        risk,
+        amount: amt,
+        horizon: hor,
+        wantDiv: wDiv,
+        wantETF: wETF,
+        goal,
+        react,
+        income,
+        exp,
+        avoid: avoidChips
+      })
+    });
 
-  const rl = { conservative: 'Conservative', moderate: 'Moderate', aggressive: 'Aggressive' };
-  const hl = { short: '1–2 yr', medium: '3–5 yr', long: '6–15 yr', vlong: '15+ yr' };
-  document.getElementById('resMeta').textContent = `Age ${age} · ${rl[risk] || risk} risk · ${hl[hor] || hor} horizon · ${amt} starting`;
-  document.getElementById('fitScore').textContent = { conservative: 91, moderate: 87, aggressive: 84 }[risk] || 85;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Recommendation request failed');
 
-  const alloc = getAlloc(risk);
-  document.getElementById('allocBar').innerHTML = alloc.map(a => `<div class="bar-seg" style="width:${a.p}%;background:${a.c}"></div>`).join('');
-  document.getElementById('allocLeg').innerHTML = alloc.map(a => `<div class="bli"><div class="bld" style="background:${a.c}"></div>${a.p}% ${a.l}</div>`).join('');
+    lastPicks = data.recommendations.map((s) => ({
+      sym: s.symbol,
+      name: s.name,
+      price: s.currentPrice,
+      changePct: s.changePercent,
+      target: s.targetMean,
+      targetHigh: s.targetHigh,
+      targetLow: s.targetLow,
+      fit: s.fitScore,
+      desc: s.description,
+      risk: s.risk,
+      rating: s.fitScore >= 90 ? 'Strong Buy' : s.fitScore >= 80 ? 'Buy' : 'Hold',
+      news: s.news || []
+    }));
 
-  renderResults();
+    const rl = { conservative: 'Conservative', moderate: 'Moderate', aggressive: 'Aggressive' };
+    const hl = { short: '1–2 yr', medium: '3–5 yr', long: '6–15 yr', vlong: '15+ yr' };
 
-  document.getElementById('results').classList.add('visible');
-  setTimeout(() => { document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
-  showToast('Portfolio generated — scroll down to view your picks.');
+    document.getElementById('resMeta').textContent =
+      `Age ${age} · ${rl[risk] || risk} risk · ${hl[hor] || hor} horizon · ${amt} starting`;
+
+    document.getElementById('fitScore').textContent =
+      Math.round(lastPicks.reduce((sum, s) => sum + s.fit, 0) / lastPicks.length);
+
+    const alloc = getAlloc(risk);
+    document.getElementById('allocBar').innerHTML =
+      alloc.map(a => `<div class="bar-seg" style="width:${a.p}%;background:${a.c}"></div>`).join('');
+
+    document.getElementById('allocLeg').innerHTML =
+      alloc.map(a => `<div class="bli"><div class="bld" style="background:${a.c}"></div>${a.p}% ${a.l}</div>`).join('');
+
+    renderResults();
+    document.getElementById('results').classList.add('visible');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    console.error(err);
+    showToast('Could not load live recommendations right now.');
+  } finally {
+    btn.classList.remove('analyzing');
+    btn.disabled = false;
+  }
+}
+</script>
 }
 
 /* ════════════════════════════════════
