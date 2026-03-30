@@ -1744,42 +1744,42 @@ function getLocalAnswer(q) {
   `;
 }
 
-function askAI() {
+async function askAI() {
   const input = document.getElementById('aiInput');
   const question = input?.value.trim();
 
   if (!question) {
-    showToast('Please type a question first');
+    alert("Please enter a question");
     return;
   }
 
-  const askBtn = document.getElementById('askBtn');
-  const wrap = document.getElementById('aiAnswerWrap');
-  const questionEl = document.getElementById('aaQuestion');
   const contentEl = document.getElementById('aaContent');
+  const wrap = document.getElementById('aiAnswerWrap');
 
-  if (askBtn) {
-    askBtn.classList.add('ai-asking');
-    askBtn.disabled = true;
-  }
+  wrap.style.display = 'block';
+  contentEl.innerHTML = "Thinking...";
 
-  if (questionEl) questionEl.textContent = question;
-  if (wrap) wrap.style.display = 'block';
-  if (contentEl) {
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error);
+
     contentEl.innerHTML = `
-      <div class="aa-loading">
-        Thinking… <span class="dots"><span>●</span><span>●</span><span>●</span></span>
+      <div>
+        <strong>Answer:</strong><br><br>
+        ${data.answer.replace(/\n/g, "<br>")}
       </div>
     `;
+  } catch (err) {
+    console.error(err);
+    contentEl.innerHTML = "Error getting response.";
   }
-
-  setTimeout(() => {
-    if (contentEl) contentEl.innerHTML = getLocalAnswer(question);
-    if (askBtn) {
-      askBtn.classList.remove('ai-asking');
-      askBtn.disabled = false;
-    }
-  }, 350);
 }
 
 /* ---------------- init ---------------- */
