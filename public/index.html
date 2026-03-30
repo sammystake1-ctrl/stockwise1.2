@@ -1005,553 +1005,593 @@ footer{background:var(--g950);padding:56px 32px 34px;border-top:1px solid rgba(2
 <div class="toast" id="toast"><span id="toastMsg"></span></div>
 
 <script>
-/* ════════════════════════════════════
-   STOCK DATABASE
-════════════════════════════════════ */
-const DB = {
-  AAPL:{ name:'Apple Inc.',             sector:'Technology',         color:'linear-gradient(135deg,#1d4ed8,#3b82f6)', pe:'28.4',yld:'0.5%',beta:'1.14',cap:'$3.3T',lo:180,hi:240,aB:28,aH:8,aS:2,  desc:'The world\'s most valuable company. iPhone, Mac, Services ecosystem, and Vision Pro spatial computing position Apple as the definitive premium consumer tech holding for long-term investors.', match:{conservative:72,moderate:86,aggressive:80} },
-  MSFT:{ name:'Microsoft Corp.',         sector:'Technology / Cloud', color:'linear-gradient(135deg,#7c3aed,#a855f7)', pe:'35.1',yld:'0.7%',beta:'0.90',cap:'$3.1T',lo:400,hi:510,aB:32,aH:5,aS:1,  desc:'Azure cloud computing, Office 365 subscriptions, and a deep Copilot AI integration make Microsoft the safest large-cap technology holding for long-term portfolios of all risk types.', match:{conservative:88,moderate:92,aggressive:79} },
-  NVDA:{ name:'NVIDIA Corporation',      sector:'AI & Semiconductors',color:'linear-gradient(135deg,#059669,#10b981)', pe:'42.6',yld:'0.03%',beta:'1.72',cap:'$2.9T',lo:110,hi:185,aB:36,aH:6,aS:1, desc:'The infrastructure backbone of the AI revolution. NVIDIA\'s GPUs power virtually every major AI training workload globally, and Blackwell demand continues to significantly exceed supply.', match:{conservative:50,moderate:75,aggressive:96} },
-  AMZN:{ name:'Amazon.com Inc.',          sector:'E-Commerce / Cloud', color:'linear-gradient(135deg,#b45309,#f59e0b)', pe:'37.8',yld:'0%',  beta:'1.17',cap:'$2.1T',lo:215,hi:285,aB:40,aH:4,aS:0,  desc:'AWS dominates cloud infrastructure while Amazon Advertising accelerates to rival Google. A two-engine growth machine currently trading at a relative discount to its long-term potential.', match:{conservative:70,moderate:88,aggressive:85} },
-  JNJ: { name:'Johnson & Johnson',        sector:'Healthcare',         color:'linear-gradient(135deg,#dc2626,#ef4444)', pe:'16.2',yld:'3.1%',beta:'0.55',cap:'$381B',lo:155,hi:185,aB:12,aH:14,aS:3, desc:'A 60+ year dividend aristocrat with consecutive annual increases. Defensive healthcare exposure anchors conservative portfolios against market downturns with predictable cash flows.', match:{conservative:93,moderate:78,aggressive:52} },
-  VTI: { name:'Vanguard Total Mkt ETF',   sector:'Broad Market ETF',   color:'linear-gradient(135deg,#0284c7,#38bdf8)', pe:'21.3',yld:'1.4%',beta:'1.00',cap:'ETF',  lo:240,hi:295,aB:30,aH:5,aS:0,  desc:'The single best beginner investment. Instant diversification across 3,600+ US companies at a 0.03% expense ratio. Every well-structured beginner portfolio should hold this as a core position.', match:{conservative:96,moderate:88,aggressive:62} },
-  GOOGL:{ name:'Alphabet Inc.',           sector:'Technology / AI',    color:'linear-gradient(135deg,#16a34a,#22c55e)', pe:'22.1',yld:'0.5%',beta:'1.06',cap:'$2.2T',lo:180,hi:228,aB:31,aH:9,aS:1,  desc:'Google Search dominates at 91% global market share. YouTube, Google Cloud, DeepMind AI, and Waymo autonomous vehicles each represent independent future growth drivers.', match:{conservative:76,moderate:90,aggressive:86} },
-  BRKB:{ name:'Berkshire Hathaway B',     sector:'Diversified',        color:'linear-gradient(135deg,#92400e,#d97706)', pe:'20.4',yld:'0%',  beta:'0.88',cap:'$1.1T',lo:420,hi:510,aB:8,aH:12,aS:0,  desc:'Warren Buffett\'s diversified conglomerate is among the ultimate long-term holds. A $189B cash pile gives Berkshire extraordinary optionality to deploy capital in any market downturn.', match:{conservative:91,moderate:84,aggressive:58} },
-};
-const NEWS = {
-  AAPL: ['Apple Vision Pro 2 in active development for 2026','iPhone 17 pre-orders exceed estimates by 12%','Apple Services posts all-time quarterly revenue record'],
-  MSFT: ['Copilot reaches 1M+ enterprise seats ahead of schedule','Azure AI revenue accelerates 33% year-over-year','Microsoft raises dividend 10%, authorizes $60B buyback'],
-  NVDA: ['Blackwell GPU demand exceeds supply 3x, CEO confirms','NVDA added to 14 major institutional portfolios this quarter','Next-generation Rubin architecture announced for 2026'],
-  AMZN: ['AWS secures 5-year $12B federal government contract','Amazon Advertising grows 23% to rival Google Display','Prime membership surpasses 230 million subscribers globally'],
-  JNJ:  ['FDA approval granted for breakthrough cancer immunotherapy','Johnson & Johnson raises full-year guidance on MedTech','62nd consecutive year of dividend growth confirmed'],
-  VTI:  ['Vanguard cuts VTI expense ratio to record-low 0.03%','ETF industry inflows reach $800B in 2025, VTI leads','Morningstar reaffirms 5-star Gold rating for VTI'],
-  GOOGL:['Alphabet beats estimates; Search holds 91% global share','Waymo robotaxi expands to 10 new US cities in 2025','YouTube Shorts ad monetization launches globally'],
-  BRKB: ['Berkshire reveals new $4.7B position in Japanese trading firms','Buffett: "American business is better positioned than ever"','Cash reserves reach all-time record of $189 billion'],
-};
+<script>
+/* =========================================================
+   STOCKWISE PRO — CLEAN SCRIPT BLOCK
+   Replaces your entire old script block
+========================================================= */
 
-/* ════════════════════════════════════
-   LIVE MARKET DATA
-   — Fires immediately when script parses
-   — Races two proxies per symbol (fastest wins)
-   — Streams renders as each quote arrives
-   — localStorage cache for instant repeat loads
-════════════════════════════════════ */
+/* -----------------------------
+   STATE
+----------------------------- */
+let curStep = 1;
+const TOTAL = 6;
+const LABELS = [
+  'Step 1 of 6 — Personal Information',
+  'Step 2 of 6 — Financial Picture',
+  'Step 3 of 6 — Goals & Timeline',
+  'Step 4 of 6 — Risk Profile',
+  'Step 5 of 6 — Experience & Knowledge',
+  'Step 6 of 6 — Preferences & Final Details'
+];
+
+let userTier = 'free';
+let lastPicks = [];
 let Q = {};
-const TICK_SYMS  = ['AAPL','MSFT','NVDA','AMZN','GOOGL','TSLA','META','BRK-B','JPM','V','NFLX','SPY','QQQ'];
+
+const TICK_SYMS  = ['AAPL','MSFT','NVDA','AMZN','GOOGL','TSLA','META','JPM','V','NFLX','SPY','QQQ'];
 const HERO_SYMS  = ['AAPL','MSFT','NVDA','AMZN'];
 const INDEX_SYMS = ['^GSPC','^IXIC','^DJI','^VIX','^TNX'];
-const CACHE_KEY  = 'swp_quotes_v1';
-const CACHE_TTL  = 60 * 1000; // 1 minute
 
-// ── Restore from cache immediately (zero wait) ──────────────────
-(function restoreCache() {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return;
-    const { ts, data } = JSON.parse(raw);
-    if (Date.now() - ts > CACHE_TTL) return;
-    Q = data;
-  } catch {}
-})();
+const CACHE_KEY = 'swp_quotes_v2';
+const CACHE_TTL = 60 * 1000;
 
-// ── Race two proxies per symbol — whichever responds first wins ──
-function yFetch(sym) {
-  const yUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=2d`;
-  const yUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=2d`;
+/* -----------------------------
+   SIMPLE MODAL CONTENT
+----------------------------- */
+const MODAL_CONTENT = {
+  about: `
+    <h3>About StockWise Pro</h3>
+    <p>StockWise Pro helps beginner investors get personalized stock ideas, learn investing basics, and understand live market data in plain English.</p>
+  `,
+  privacy: `
+    <h3>Privacy Policy</h3>
+    <p>Your quiz answers are used only to generate your recommendations. Do not enter sensitive personal information you would not want stored.</p>
+  `,
+  terms: `
+    <h3>Terms of Service</h3>
+    <p>StockWise Pro is for educational and informational purposes only. It is not investment advice, legal advice, or tax advice.</p>
+  `,
+  login: `
+    <h3>Sign In</h3>
+    <p>This demo version does not have full account auth connected yet.</p>
+    <button class="btn-modal" onclick="closeM()">Close</button>
+  `,
+  register: `
+    <h3>Create Free Account</h3>
+    <p>This demo version does not have full account auth connected yet.</p>
+    <button class="btn-modal" onclick="closeM()">Close</button>
+  `,
+  upgrade: `
+    <h3>Upgrade to Pro</h3>
+    <p>Upgrade unlocks all recommendations, analyst targets, news, and future portfolio tools.</p>
+    <button class="btn-modal" onclick="unlockPro(); closeM()">Unlock Demo Pro</button>
+  `
+};
 
-  function tryProxy(proxyUrl) {
-    return fetch(proxyUrl, { signal: AbortSignal.timeout(5000) })
-      .then(r => r.json())
-      .then(raw => {
-        const d = raw.contents ? JSON.parse(raw.contents) : raw;
-        const m = d?.chart?.result?.[0]?.meta;
-        if (!m?.regularMarketPrice) throw new Error('no price');
-        return {
-          price: m.regularMarketPrice,
-          prev:  m.chartPreviousClose || m.previousClose || m.regularMarketPrice,
-          hi52:  m.fiftyTwoWeekHigh,
-          lo52:  m.fiftyTwoWeekLow,
-        };
-      });
-  }
-
-  // Race proxy 1 and proxy 2 — first valid response wins
-  return Promise.any([
-    tryProxy(`https://api.allorigins.win/get?url=${encodeURIComponent(yUrl1)}`),
-    tryProxy(`https://corsproxy.io/?${encodeURIComponent(yUrl2)}`),
-  ]).catch(() => null);
+/* -----------------------------
+   UTILITIES
+----------------------------- */
+function fmt(n, d = 2) {
+  return n != null && !Number.isNaN(Number(n)) ? Number(n).toFixed(d) : '—';
 }
 
-function fmt(n, d=2) { return n != null ? n.toFixed(d) : '—'; }
-function chgInfo(q) {
-  if (!q) return { pct: 0, up: true, txt: '—' };
-  const p = ((q.price - q.prev) / q.prev * 100);
-  return { pct: p, up: p >= 0, txt: `${p >= 0 ? '▲' : '▼'} ${Math.abs(p).toFixed(2)}%` };
+function fmtMoney(v) {
+  return v == null || Number.isNaN(Number(v)) ? 'N/A' : `$${Number(v).toFixed(2)}`;
 }
 
-// ── Fetch one symbol, update cache & re-render immediately ──────
-async function fetchOne(sym) {
-  const q = await yFetch(sym);
-  if (!q) return;
-  Q[sym] = q;
-  Q[sym.replace(/[^A-Za-z0-9]/g, '')] = q;
-  // Save updated cache
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: Q })); } catch {}
-  // Stream-update the UI as each quote arrives
-  renderTicker();
-  renderHeroStocks();
-  renderMarketBar();
+function fmtPct(v) {
+  if (v == null || Number.isNaN(Number(v))) return 'N/A';
+  const n = Number(v);
+  return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 }
 
-// ── Fire ALL fetches at once, stream results as they land ────────
-function refreshAllData() {
-  const allSyms = [...new Set([
-    ...TICK_SYMS,
-    ...INDEX_SYMS,
-    ...Object.keys(DB).map(s => s === 'BRK_B' ? 'BRK-B' : s).filter(s => s !== 'AMZN_C'),
-  ])];
-  // Render immediately from cache if available
-  if (Object.keys(Q).length > 0) {
-    renderTicker();
-    renderHeroStocks();
-    renderMarketBar();
-  }
-  // Fire every fetch in parallel — no waiting
-  allSyms.forEach(sym => fetchOne(sym));
+function fmtDate(unixSeconds) {
+  if (!unixSeconds) return '';
+  const d = new Date(unixSeconds * 1000);
+  return d.toLocaleDateString();
 }
 
-function renderTicker() {
-  let html = '';
-  for (let p = 0; p < 2; p++) {
-    TICK_SYMS.forEach(s => {
-      const q = Q[s] || Q[s.replace('-', '')];
-      const ds = s.replace('-', '.');
-      if (q) {
-        const c = chgInfo(q);
-        html += `<span class="ti"><span class="ti-sym">${ds}</span><span class="ti-p">$${fmt(q.price)}</span><span class="${c.up ? 'ti-up' : 'ti-dn'}">${c.txt}</span></span>`;
-      } else {
-        html += `<span class="ti"><span class="ti-sym">${ds}</span><span class="ti-p">—</span></span>`;
-      }
-    });
-  }
-  const el = document.getElementById('tickerTrack');
-  if (el) el.innerHTML = html;
+function escapeHtml(str) {
+  return String(str || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
-function renderHeroStocks() {
-  const colors = {
-    AAPL: 'linear-gradient(135deg,#1d4ed8,#3b82f6)',
-    MSFT: 'linear-gradient(135deg,#7c3aed,#a855f7)',
-    NVDA: 'linear-gradient(135deg,#059669,#10b981)',
-    AMZN: 'linear-gradient(135deg,#b45309,#f59e0b)',
-  };
-  const names = { AAPL: 'Apple Inc.', MSFT: 'Microsoft', NVDA: 'NVIDIA Corp.', AMZN: 'Amazon.com' };
-  const html = HERO_SYMS.map(s => {
-    const q = Q[s];
-    const c = chgInfo(q);
-    return `<div class="hstock">
-      <div class="hsl">
-        <div class="hsi" style="background:${colors[s]}">${s.slice(0,3)}</div>
-        <div><div class="hs-sym">${s}</div><div class="hs-nm">${names[s]}</div></div>
-      </div>
-      <div>
-        <div class="hs-price">${q ? '$' + fmt(q.price) : '<span class="shimmer" style="width:55px;display:inline-block"></span>'}</div>
-        <div class="hs-chg ${c.up ? 'c-up' : 'c-dn'}">${c.txt}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const el = document.getElementById('heroStocks');
-  if (el) el.innerHTML = html;
-
-  const hasData = Object.keys(Q).filter(k => !k.startsWith('^')).length > 0;
-  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const statusEl = document.getElementById('heroStatusTxt');
-  const chipEl   = document.getElementById('liveChip');
-  if (statusEl) statusEl.textContent = hasData ? `Updated ${now}` : 'Loading…';
-  if (chipEl) chipEl.innerHTML = hasData
-    ? '<span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--g400);font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:var(--g400);display:inline-block;animation:lpulse 2s infinite"></span>Live · Auto-refreshes every 60s</span>'
-    : '<span style="font-size:10px;color:rgba(255,255,255,.4)">Connecting to market data…</span>';
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMsg');
+  if (!toast || !toastMsg) return;
+  toastMsg.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
-function renderMarketBar() {
-  const idxMap = { '^GSPC': 'mb-sp500', '^IXIC': 'mb-ndx', '^DJI': 'mb-dow', '^VIX': 'mb-vix', '^TNX': 'mb-tenyear' };
-  Object.entries(idxMap).forEach(([sym, elId]) => {
-    const el = document.getElementById(elId);
-    if (!el) return;
-    const q = Q[sym] || Q[sym.replace(/\^/, '')];
-    if (!q) return; // leave shimmer in place until data arrives
-    const c = chgInfo(q);
-    const isTNX = sym === '^TNX';
-    el.outerHTML = `<span id="${elId}" class="mb-val">${isTNX ? fmt(q.price, 2) + '%' : fmt(q.price, 2)}</span><span class="mb-chg ${c.up ? 'mb-up' : 'mb-dn'}">${c.txt}</span>`;
-  });
+/* -----------------------------
+   PAGE ROUTING / NAV
+----------------------------- */
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name)?.classList.add('active');
+
+  document.querySelectorAll('.nav-links a[id^="nav-"]').forEach(a => a.classList.remove('nav-active'));
+  document.getElementById('nav-' + name)?.classList.add('nav-active');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ════════════════════════════════════
+function scrollQuiz() {
+  goPage('home');
+  setTimeout(() => {
+    document.getElementById('get-started')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
+}
+
+function scrollPrice() {
+  goPage('home');
+  setTimeout(() => {
+    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
+}
+
+/* -----------------------------
    STEP WIZARD
-════════════════════════════════════ */
-let curStep=1;
-const TOTAL=6;
-const LABELS=['Step 1 of 6 — Personal Information','Step 2 of 6 — Financial Picture','Step 3 of 6 — Goals & Timeline','Step 4 of 6 — Risk Profile','Step 5 of 6 — Experience & Knowledge','Step 6 of 6 — Preferences & Final Details'];
-
-function buildDots(){
-  document.getElementById('stepDots').innerHTML=Array.from({length:TOTAL},(_,i)=>`<div class="sd" id="sd${i+1}" onclick="if(${i+1}<=${curStep})showStep(${i+1})"></div>`).join('');
+----------------------------- */
+function buildDots() {
+  const dots = document.getElementById('stepDots');
+  if (!dots) return;
+  dots.innerHTML = Array.from({ length: TOTAL }, (_, i) =>
+    `<div class="sd" id="sd${i + 1}" onclick="if (${i + 1} <= curStep) showStep(${i + 1})"></div>`
+  ).join('');
   updateDots();
 }
-function updateDots(){
-  for(let i=1;i<=TOTAL;i++){const d=document.getElementById('sd'+i);d.className='sd '+(i<curStep?'done':i===curStep?'active':'todo');}
-  document.getElementById('stepLabel').textContent=LABELS[curStep-1];
-}
-function showStep(n){document.querySelectorAll('.qstep').forEach(e=>e.classList.remove('active'));document.getElementById('step'+n)?.classList.add('active');curStep=n;updateDots();}
-function nextS(f){if(f<TOTAL)showStep(f+1);}
-function prevS(f){if(f>1)showStep(f-1);}
 
-function sel(id,val,el){document.getElementById(id).value=val;el.closest('.rg').querySelectorAll('.rc').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
-function tc(el){el.classList.toggle('sel');}
-function yn(id,val,el){document.getElementById(id).value=val;el.closest('.yn').querySelectorAll('.ync').forEach(c=>{c.classList.remove('sy','sn');});el.classList.add(val==='yes'?'sy':'sn');}
-
-/* ════════════════════════════════════
-   US STOCK DATABASE — 60 stocks across
-   all major sectors & risk profiles
-════════════════════════════════════ */
-const DB = {
-  // ── TECHNOLOGY ──
-  AAPL: { name:'Apple Inc.',          sector:'Technology',      tags:['tech','largecap','growth'],         color:'#1d4ed8', pe:'28.4', yld:'0.5%', beta:1.14, cap:'$3.3T', lo:180, hi:240, aB:28,aH:8,aS:2,  riskScore:{conservative:72,moderate:86,aggressive:80}, desc:'The world\'s most valuable company. iPhone, Mac, Services ecosystem, and Vision Pro spatial computing position Apple as the definitive premium consumer tech holding.' },
-  MSFT: { name:'Microsoft Corp.',     sector:'Technology',      tags:['tech','cloud','largecap','growth'], color:'#7c3aed', pe:'35.1', yld:'0.7%', beta:0.90, cap:'$3.1T', lo:400, hi:510, aB:32,aH:5,aS:1,  riskScore:{conservative:88,moderate:92,aggressive:79}, desc:'Azure cloud computing, Office 365 subscriptions, and a deep Copilot AI integration make Microsoft the most defensible large-cap technology holding.' },
-  NVDA: { name:'NVIDIA Corp.',        sector:'Technology',      tags:['tech','ai','semiconductor'],        color:'#059669', pe:'42.6', yld:'0.0%', beta:1.72, cap:'$2.9T', lo:110, hi:185, aB:36,aH:6,aS:1,  riskScore:{conservative:48,moderate:73,aggressive:96}, desc:'The infrastructure backbone of the AI revolution. NVIDIA\'s GPUs power virtually every major AI training workload globally. Blackwell demand exceeds supply by 3x.' },
-  GOOGL:{ name:'Alphabet Inc.',       sector:'Technology',      tags:['tech','ai','largecap','growth'],    color:'#16a34a', pe:'22.1', yld:'0.5%', beta:1.06, cap:'$2.2T', lo:180, hi:228, aB:31,aH:9,aS:1,  riskScore:{conservative:74,moderate:90,aggressive:86}, desc:'Google Search dominates at 91% global market share. YouTube, Google Cloud, DeepMind AI, and Waymo autonomous vehicles are four distinct future growth drivers.' },
-  META: { name:'Meta Platforms',      sector:'Technology',      tags:['tech','growth','ai'],               color:'#2563eb', pe:'26.3', yld:'0.4%', beta:1.24, cap:'$1.5T', lo:550, hi:720, aB:35,aH:7,aS:1,  riskScore:{conservative:60,moderate:84,aggressive:91}, desc:'Facebook, Instagram, WhatsApp, and a bold Reality Labs VR/AR bet give Meta unmatched social media scale and a massive AI advertising engine.' },
-  AMZN: { name:'Amazon.com Inc.',     sector:'Technology',      tags:['tech','cloud','consumer','growth'], color:'#b45309', pe:'37.8', yld:'0.0%', beta:1.17, cap:'$2.1T', lo:215, hi:285, aB:40,aH:4,aS:0,  riskScore:{conservative:69,moderate:88,aggressive:85}, desc:'AWS dominates cloud infrastructure while Amazon Advertising accelerates to rival Google. A two-engine growth machine trading at a relative discount.' },
-  CRM:  { name:'Salesforce Inc.',     sector:'Technology',      tags:['tech','cloud','growth'],            color:'#0891b2', pe:'31.2', yld:'0.6%', beta:1.31, cap:'$285B',  lo:260, hi:350, aB:24,aH:12,aS:2, riskScore:{conservative:55,moderate:77,aggressive:84}, desc:'The leading CRM platform with a growing AI-powered Agentforce suite. Enterprise sticky revenues and expanding margins drive consistent double-digit growth.' },
-  ORCL: { name:'Oracle Corp.',        sector:'Technology',      tags:['tech','cloud','dividend'],          color:'#dc2626', pe:'38.4', yld:'1.0%', beta:0.98, cap:'$460B',  lo:140, hi:210, aB:18,aH:14,aS:3, riskScore:{conservative:68,moderate:80,aggressive:76}, desc:'Oracle Cloud Infrastructure is the fastest-growing hyperscaler, winning major AI training contracts. Multi-cloud database dominance provides a defensible moat.' },
-  AMD:  { name:'Advanced Micro Devices',sector:'Technology',    tags:['tech','semiconductor','ai'],        color:'#9333ea', pe:'38.1', yld:'0.0%', beta:1.68, cap:'$240B',  lo:110, hi:190, aB:26,aH:10,aS:2, riskScore:{conservative:42,moderate:68,aggressive:92}, desc:'AMD\'s EPYC server CPUs and MI300X AI GPUs are taking meaningful share from Intel and challenging NVIDIA in AI inference workloads.' },
-  ADBE: { name:'Adobe Inc.',          sector:'Technology',      tags:['tech','ai','growth'],               color:'#e11d48', pe:'29.4', yld:'0.0%', beta:1.22, cap:'$210B',  lo:410, hi:560, aB:20,aH:16,aS:2, riskScore:{conservative:58,moderate:78,aggressive:80}, desc:'Creative Cloud and Document Cloud subscriptions generate highly predictable recurring revenue. Firefly AI integration is expanding Adobe\'s total addressable market.' },
-  INTC: { name:'Intel Corp.',         sector:'Technology',      tags:['tech','semiconductor','dividend'],  color:'#0284c7', pe:'18.2', yld:'2.1%', beta:1.04, cap:'$90B',   lo:18,  hi:32,  aB:8,aH:20,aS:8,  riskScore:{conservative:55,moderate:58,moderate:58,aggressive:55}, desc:'Intel is executing a major turnaround as a contract chip manufacturer. Trading at a significant discount to peers, the risk/reward is asymmetric for patient investors.' },
-  AVGO: { name:'Broadcom Inc.',       sector:'Technology',      tags:['tech','semiconductor','dividend'],  color:'#7c3aed', pe:'27.6', yld:'1.5%', beta:1.18, cap:'$870B',  lo:160, hi:220, aB:26,aH:8,aS:1,  riskScore:{conservative:72,moderate:84,aggressive:82}, desc:'Broadcom\'s semiconductor and software businesses generate massive free cash flow. Custom AI accelerators for Google, Meta, and Apple provide a multi-year growth runway.' },
-  NOW:  { name:'ServiceNow Inc.',     sector:'Technology',      tags:['tech','cloud','ai','growth'],       color:'#16a34a', pe:'52.1', yld:'0.0%', beta:1.14, cap:'$210B',  lo:850, hi:1100,aB:28,aH:8,aS:0,  riskScore:{conservative:50,moderate:75,aggressive:88}, desc:'The leading enterprise workflow automation platform with 98%+ renewal rates. AI-powered agents are opening a new upsell cycle across its 8,000+ enterprise customers.' },
-
-  // ── HEALTHCARE ──
-  JNJ:  { name:'Johnson & Johnson',   sector:'Healthcare',      tags:['healthcare','dividend','defensive'],color:'#dc2626', pe:'16.2', yld:'3.1%', beta:0.55, cap:'$381B',  lo:155, hi:185, aB:12,aH:14,aS:3, riskScore:{conservative:93,moderate:78,aggressive:50}, desc:'A 60+ year dividend aristocrat. Defensive healthcare exposure anchors conservative portfolios against market downturns with highly predictable cash flows.' },
-  UNH:  { name:'UnitedHealth Group',  sector:'Healthcare',      tags:['healthcare','largecap','dividend'], color:'#0891b2', pe:'19.4', yld:'1.8%', beta:0.62, cap:'$450B',  lo:480, hi:620, aB:22,aH:8,aS:2,  riskScore:{conservative:88,moderate:84,aggressive:61}, desc:'The largest US health insurer with a vertically integrated Optum healthcare services arm. Consistent earnings growth through multiple market cycles.' },
-  ABT:  { name:'Abbott Laboratories', sector:'Healthcare',      tags:['healthcare','dividend','defensive'],color:'#059669', pe:'22.8', yld:'2.0%', beta:0.70, cap:'$195B',  lo:105, hi:135, aB:18,aH:10,aS:1, riskScore:{conservative:85,moderate:80,aggressive:55}, desc:'Medical devices, diagnostics, and nutrition products create a diversified healthcare revenue stream. FreeStyle Libre CGM is a dominant diabetes management franchise.' },
-  LLY:  { name:'Eli Lilly & Co.',     sector:'Healthcare',      tags:['healthcare','biotech','growth'],    color:'#7c3aed', pe:'48.3', yld:'0.7%', beta:0.42, cap:'$780B',  lo:700, hi:1000,aB:24,aH:8,aS:1,  riskScore:{conservative:65,moderate:82,aggressive:88}, desc:'Mounjaro and Zepbound GLP-1 drugs are redefining obesity and diabetes treatment. Lilly\'s pipeline positions it as one of the most compelling healthcare growth stories in a generation.' },
-  PFE:  { name:'Pfizer Inc.',         sector:'Healthcare',      tags:['healthcare','dividend','value'],    color:'#1d4ed8', pe:'12.1', yld:'6.3%', beta:0.55, cap:'$148B',  lo:23,  hi:32,  aB:10,aH:18,aS:5, riskScore:{conservative:72,moderate:65,aggressive:48}, desc:'Trading near multi-year lows with a 6%+ dividend yield. Post-COVID revenue normalization creates a potential mean-reversion opportunity for income-focused investors.' },
-  MRNA: { name:'Moderna Inc.',        sector:'Healthcare',      tags:['biotech','growth','speculative'],   color:'#dc2626', pe:'N/A',  yld:'0.0%', beta:1.62, cap:'$14B',   lo:38,  hi:80,  aB:8,aH:12,aS:6,  riskScore:{conservative:22,moderate:45,aggressive:78}, desc:'Beyond COVID vaccines, Moderna\'s mRNA platform is advancing RSV, flu, and cancer therapeutics. A high-risk, high-reward biotech with transformative long-term potential.' },
-  ISRG: { name:'Intuitive Surgical',  sector:'Healthcare',      tags:['healthcare','growth','medtech'],    color:'#0891b2', pe:'64.2', yld:'0.0%', beta:0.88, cap:'$190B',  lo:450, hi:600, aB:18,aH:12,aS:2, riskScore:{conservative:60,moderate:78,aggressive:82}, desc:'The undisputed leader in robotic surgery with the da Vinci system. An exceptionally sticky installed base drives recurring instrument and service revenues.' },
-
-  // ── FINANCIALS ──
-  JPM:  { name:'JPMorgan Chase',      sector:'Financials',      tags:['financials','dividend','largecap'], color:'#1d4ed8', pe:'13.4', yld:'2.4%', beta:1.12, cap:'$730B',  lo:200, hi:260, aB:20,aH:12,aS:2, riskScore:{conservative:82,moderate:86,aggressive:72}, desc:'The world\'s most profitable bank. Jamie Dimon\'s fortress balance sheet, diversified revenue streams, and a strong dividend make JPMorgan the blue-chip financial holding.' },
-  BAC:  { name:'Bank of America',     sector:'Financials',      tags:['financials','dividend','value'],    color:'#dc2626', pe:'13.8', yld:'2.5%', beta:1.34, cap:'$310B',  lo:38,  hi:52,  aB:18,aH:14,aS:2, riskScore:{conservative:72,moderate:82,aggressive:74}, desc:'Highly leveraged to rising interest rates. Moynihan\'s steady execution and a massive consumer banking franchise create long-term value for patient investors.' },
-  GS:   { name:'Goldman Sachs',       sector:'Financials',      tags:['financials','growth','dividend'],   color:'#1e3a5f', pe:'14.2', yld:'2.2%', beta:1.38, cap:'$170B',  lo:490, hi:620, aB:16,aH:14,aS:2, riskScore:{conservative:62,moderate:78,aggressive:80}, desc:'Investment banking and trading powerhouse benefiting from a deal-making revival. Asset management expansion is diversifying Goldman\'s volatile trading revenues.' },
-  V:    { name:'Visa Inc.',           sector:'Financials',      tags:['financials','growth','dividend'],   color:'#1d4ed8', pe:'30.1', yld:'0.8%', beta:0.92, cap:'$540B',  lo:270, hi:340, aB:30,aH:8,aS:1,  riskScore:{conservative:86,moderate:92,aggressive:80}, desc:'Visa\'s payment network is one of the most durable economic moats in existence. Every global card payment is a small royalty to Visa, regardless of which bank issues the card.' },
-  MA:   { name:'Mastercard Inc.',     sector:'Financials',      tags:['financials','growth','dividend'],   color:'#dc2626', pe:'32.4', yld:'0.6%', beta:0.95, cap:'$460B',  lo:460, hi:570, aB:28,aH:8,aS:0,  riskScore:{conservative:85,moderate:91,aggressive:79}, desc:'Mastercard and Visa are effectively a duopoly on global payments. Cross-border transaction volumes and value-added services drive above-market earnings growth.' },
-  BRK_B:{ name:'Berkshire Hathaway B',sector:'Financials',     tags:['financials','value','dividend'],    color:'#92400e', pe:'20.4', yld:'0.0%', beta:0.88, cap:'$1.1T', lo:420, hi:510, aB:8,aH:12,aS:0,   riskScore:{conservative:91,moderate:84,aggressive:58}, desc:'Warren Buffett\'s diversified conglomerate. A $189B cash pile gives Berkshire extraordinary optionality. Owning BRK.B is like having the world\'s greatest investor manage your money.' },
-  PYPL: { name:'PayPal Holdings',     sector:'Financials',      tags:['financials','tech','value'],        color:'#1d4ed8', pe:'17.2', yld:'0.0%', beta:1.42, cap:'$68B',   lo:55,  hi:88,  aB:14,aH:16,aS:4, riskScore:{conservative:50,moderate:68,aggressive:76}, desc:'Trading at historically cheap valuations after years of multiple compression. A turnaround under new CEO Alex Chriss could unlock significant value in Venmo and Braintree.' },
-  AXP:  { name:'American Express',    sector:'Financials',      tags:['financials','dividend','growth'],   color:'#059669', pe:'19.8', yld:'1.2%', beta:1.12, cap:'$198B',  lo:220, hi:295, aB:20,aH:12,aS:2, riskScore:{conservative:74,moderate:84,aggressive:78}, desc:'The premium card network with affluent cardholders who spend more and default less. Warren Buffett\'s decades-long conviction holding reflects its exceptional brand moat.' },
-
-  // ── CONSUMER ──
-  AMZN_C:null, // alias handled above
-  TSLA: { name:'Tesla Inc.',          sector:'Consumer',        tags:['consumer','ev','ai','speculative'], color:'#dc2626', pe:'55.2', yld:'0.0%', beta:2.03, cap:'$960B',  lo:220, hi:400, aB:18,aH:18,aS:14, riskScore:{conservative:28,moderate:58,aggressive:88}, desc:'Beyond EVs, Tesla\'s energy storage, FSD autonomous software, Optimus robotics, and Dojo AI supercomputer represent optionality that traditional auto valuations miss entirely.' },
-  COST: { name:'Costco Wholesale',    sector:'Consumer',        tags:['consumer','defensive','dividend'],  color:'#1d4ed8', pe:'52.4', yld:'0.6%', beta:0.78, cap:'$395B',  lo:780, hi:1050,aB:18,aH:16,aS:4, riskScore:{conservative:80,moderate:84,aggressive:65}, desc:'The most loyal consumer franchise in retail. Membership model creates recurring revenue and extraordinary customer retention. Resilient in recessions and inflation alike.' },
-  MCD:  { name:'McDonald\'s Corp.',   sector:'Consumer',        tags:['consumer','defensive','dividend'],  color:'#f59e0b', pe:'22.8', yld:'2.4%', beta:0.72, cap:'$212B',  lo:275, hi:340, aB:20,aH:12,aS:2, riskScore:{conservative:84,moderate:80,aggressive:58}, desc:'A franchise model with 95%+ franchised restaurants makes McDonald\'s essentially a real estate and royalty business. A 2%+ dividend and inflation pricing power anchor defensive portfolios.' },
-  SBUX: { name:'Starbucks Corp.',     sector:'Consumer',        tags:['consumer','dividend','growth'],     color:'#059669', pe:'28.1', yld:'3.2%', beta:0.88, cap:'$98B',   lo:72,  hi:98,  aB:16,aH:14,aS:6, riskScore:{conservative:68,moderate:72,aggressive:62}, desc:'Under CEO Brian Niccol, Starbucks is executing an operational reset. Near three-year lows with a 3%+ dividend creates a potential turnaround opportunity for patient investors.' },
-  PG:   { name:'Procter & Gamble',    sector:'Consumer',        tags:['consumer','defensive','dividend'],  color:'#1d4ed8', pe:'25.4', yld:'2.4%', beta:0.52, cap:'$378B',  lo:155, hi:180, aB:16,aH:14,aS:2, riskScore:{conservative:94,moderate:82,aggressive:54}, desc:'67 consecutive years of dividend increases. Tide, Pampers, Gillette, and 20+ billion-dollar brands provide unmatched pricing power through any economic cycle.' },
-  KO:   { name:'Coca-Cola Co.',       sector:'Consumer',        tags:['consumer','defensive','dividend'],  color:'#dc2626', pe:'22.6', yld:'3.1%', beta:0.55, cap:'$258B',  lo:58,  hi:72,  aB:14,aH:14,aS:2, riskScore:{conservative:92,moderate:80,aggressive:50}, desc:'62 years of consecutive dividend growth. Warren Buffett\'s largest long-term holding. Coca-Cola\'s brand moat and global distribution create the most defensive beverage franchise.' },
-  WMT:  { name:'Walmart Inc.',        sector:'Consumer',        tags:['consumer','defensive','dividend'],  color:'#1d4ed8', pe:'34.2', yld:'1.0%', beta:0.54, cap:'$680B',  lo:78,  hi:105, aB:22,aH:10,aS:1, riskScore:{conservative:88,moderate:84,aggressive:60}, desc:'Walmart\'s scale advantages in logistics and supply chain are widening as its advertising and e-commerce businesses accelerate. A recession-resistant consumer anchor.' },
-  NKE:  { name:'Nike Inc.',           sector:'Consumer',        tags:['consumer','growth','dividend'],     color:'#1f2937', pe:'22.4', yld:'2.0%', beta:0.98, cap:'$110B',  lo:68,  hi:95,  aB:24,aH:14,aS:4, riskScore:{conservative:62,moderate:76,aggressive:72}, desc:'Near multi-year lows as China headwinds and inventory normalization create a potential re-entry point. Nike\'s direct-to-consumer transformation improves margins long-term.' },
-
-  // ── ENERGY ──
-  XOM:  { name:'Exxon Mobil',         sector:'Energy',          tags:['energy','dividend','value'],        color:'#dc2626', pe:'14.2', yld:'3.6%', beta:1.08, cap:'$508B',  lo:102, hi:134, aB:18,aH:12,aS:4, riskScore:{conservative:72,moderate:74,aggressive:68}, desc:'The largest US oil company with industry-leading capital efficiency. Pioneer acquisition expands Permian Basin scale. A 40+ year dividend growth record rewards income investors.' },
-  CVX:  { name:'Chevron Corp.',       sector:'Energy',          tags:['energy','dividend','value'],        color:'#1d4ed8', pe:'13.8', yld:'4.1%', beta:1.06, cap:'$264B',  lo:138, hi:175, aB:16,aH:16,aS:4, riskScore:{conservative:74,moderate:76,aggressive:64}, desc:'Chevron\'s 4%+ dividend yield and disciplined capital return make it the preferred oil major for income investors. Hess acquisition adds significant Guyana production growth.' },
-  NEE:  { name:'NextEra Energy',      sector:'Energy',          tags:['energy','clean','dividend','esg'],  color:'#059669', pe:'20.2', yld:'3.3%', beta:0.68, cap:'$145B',  lo:62,  hi:82,  aB:16,aH:12,aS:3, riskScore:{conservative:82,moderate:80,aggressive:60}, desc:'The world\'s largest producer of wind and solar energy. Decades of 10% annual earnings growth and a 3%+ dividend make NextEra the ideal clean energy holding for all risk profiles.' },
-  ENPH: { name:'Enphase Energy',      sector:'Energy',          tags:['energy','clean','growth'],          color:'#f59e0b', pe:'22.4', yld:'0.0%', beta:1.85, cap:'$9B',    lo:65,  hi:130, aB:12,aH:10,aS:6, riskScore:{conservative:28,moderate:52,aggressive:80}, desc:'Leading residential solar microinverter maker with a sticky ecosystem of battery storage and EV chargers. Near multi-year lows as high rates pressured installs — potential recovery play.' },
-
-  // ── ETFs / BROAD MARKET ──
-  VTI:  { name:'Vanguard Total Mkt ETF', sector:'ETF',          tags:['etf','broad','conservative'],       color:'#0284c7', pe:'21.3', yld:'1.4%', beta:1.00, cap:'ETF',   lo:240, hi:295, aB:30,aH:5,aS:0,  riskScore:{conservative:96,moderate:88,aggressive:62}, desc:'The single best beginner investment. Instant diversification across 3,600+ US companies at a 0.03% expense ratio. The ideal core holding for any portfolio.' },
-  VOO:  { name:'Vanguard S&P 500 ETF',   sector:'ETF',          tags:['etf','broad','conservative'],       color:'#1d4ed8', pe:'22.1', yld:'1.3%', beta:1.00, cap:'ETF',   lo:460, hi:560, aB:30,aH:5,aS:0,  riskScore:{conservative:94,moderate:87,aggressive:60}, desc:'Pure S&P 500 exposure at Vanguard\'s rock-bottom 0.03% expense ratio. The 500 largest US companies, equally rebalanced, constitute the gold standard passive investment.' },
-  QQQ:  { name:'Invesco QQQ Trust',       sector:'ETF',          tags:['etf','tech','growth'],              color:'#7c3aed', pe:'30.2', yld:'0.6%', beta:1.18, cap:'ETF',   lo:440, hi:560, aB:28,aH:8,aS:2,  riskScore:{conservative:60,moderate:80,aggressive:88}, desc:'The top 100 non-financial Nasdaq companies concentrated in technology, biotech, and consumer growth. Higher beta than SPY but stronger historical long-run returns.' },
-  SCHD: { name:'Schwab US Dividend ETF',  sector:'ETF',          tags:['etf','dividend','conservative'],    color:'#059669', pe:'16.4', yld:'3.5%', beta:0.82, cap:'ETF',   lo:26,  hi:32,  aB:25,aH:5,aS:0,  riskScore:{conservative:91,moderate:86,aggressive:60}, desc:'The premier dividend growth ETF. 100 high-quality US dividend stocks selected for yield, payout history, and financial quality. A 3.5%+ yield with annual dividend growth.' },
-  XLK:  { name:'Technology Select SPDR',  sector:'ETF',          tags:['etf','tech','growth'],              color:'#1d4ed8', pe:'32.4', yld:'0.7%', beta:1.24, cap:'ETF',   lo:210, hi:270, aB:28,aH:6,aS:1,  riskScore:{conservative:56,moderate:78,aggressive:90}, desc:'Pure technology sector exposure concentrated in Apple, Microsoft, NVIDIA, and the most profitable US tech companies. High conviction tech play in ETF form.' },
-  XLV:  { name:'Health Care Select SPDR', sector:'ETF',          tags:['etf','healthcare','defensive'],     color:'#dc2626', pe:'18.2', yld:'1.6%', beta:0.64, cap:'ETF',   lo:130, hi:155, aB:24,aH:6,aS:1,  riskScore:{conservative:88,moderate:82,aggressive:56}, desc:'Broad healthcare sector ETF covering pharmaceuticals, biotech, medical devices, and health services. Defensive characteristics with long-term demographic tailwinds.' },
-  XLF:  { name:'Financial Select SPDR',   sector:'ETF',          tags:['etf','financials','dividend'],      color:'#1e3a5f', pe:'17.4', yld:'1.8%', beta:1.16, cap:'ETF',   lo:44,  hi:54,  aB:22,aH:8,aS:2,  riskScore:{conservative:74,moderate:82,aggressive:74}, desc:'Broad financial sector exposure including banks, insurance, and fintech. Benefits from higher-for-longer interest rates and a recovering deal-making environment.' },
-  ARKK: { name:'ARK Innovation ETF',      sector:'ETF',          tags:['etf','growth','speculative'],       color:'#dc2626', pe:'N/A',  yld:'0.0%', beta:1.92, cap:'ETF',   lo:42,  hi:85,  aB:12,aH:10,aS:8, riskScore:{conservative:18,moderate:42,aggressive:82}, desc:'High-conviction bets on disruptive innovation: AI, genomics, electric vehicles, fintech, and space. Extreme volatility and high risk. Suitable only for aggressive long-horizon investors.' },
-
-  // ── INDUSTRIALS / OTHER ──
-  CAT:  { name:'Caterpillar Inc.',    sector:'Industrials',     tags:['industrial','dividend','cyclical'],  color:'#f59e0b', pe:'17.2', yld:'1.6%', beta:1.14, cap:'$185B',  lo:310, hi:420, aB:16,aH:16,aS:6, riskScore:{conservative:70,moderate:78,aggressive:72}, desc:'Global construction and mining equipment leader with strong infrastructure spending tailwinds. 29+ consecutive years of dividend growth and disciplined capital allocation.' },
-  DE:   { name:'Deere & Company',     sector:'Industrials',     tags:['industrial','dividend','tech'],      color:'#059669', pe:'15.4', yld:'1.6%', beta:1.06, cap:'$128B',  lo:370, hi:480, aB:14,aH:14,aS:4, riskScore:{conservative:68,moderate:76,aggressive:72}, desc:'John Deere\'s precision agriculture technology creates a software-driven competitive moat in farm equipment. JDLink telematics and autonomous guidance systems differentiate deeply.' },
-  LMT:  { name:'Lockheed Martin',     sector:'Industrials',     tags:['industrial','defense','dividend'],   color:'#1e3a5f', pe:'18.4', yld:'2.9%', beta:0.44, cap:'$106B',  lo:440, hi:560, aB:14,aH:16,aS:4, riskScore:{conservative:80,moderate:76,aggressive:60}, desc:'The world\'s largest defense contractor. F-35, missile defense, and hypersonic programs provide decades of contracted government revenue. An ultra-low-beta dividend payer.' },
-  RTX:  { name:'RTX Corp.',           sector:'Industrials',     tags:['industrial','defense','dividend'],   color:'#0284c7', pe:'38.4', yld:'2.2%', beta:0.78, cap:'$153B',  lo:118, hi:145, aB:18,aH:14,aS:2, riskScore:{conservative:78,moderate:78,aggressive:62}, desc:'Pratt & Whitney jet engines and Raytheon missiles create a dual commercial/defense revenue mix. GTF engine inspections are resolving, clearing the path for margin recovery.' },
-  UPS:  { name:'United Parcel Service',sector:'Industrials',    tags:['industrial','dividend','logistics'], color:'#92400e', pe:'17.2', yld:'5.2%', beta:1.08, cap:'$108B',  lo:115, hi:148, aB:12,aH:18,aS:6, riskScore:{conservative:72,moderate:70,aggressive:55}, desc:'A 5%+ dividend yield near a multi-year low creates income value. E-commerce structural growth and healthcare logistics expansion underpin long-term volume recovery.' },
-
-  // ── REAL ESTATE ──
-  AMT:  { name:'American Tower Corp.',sector:'Real Estate',     tags:['reit','infrastructure','dividend'],  color:'#7c3aed', pe:'42.4', yld:'3.3%', beta:0.78, cap:'$88B',   lo:185, hi:230, aB:18,aH:12,aS:2, riskScore:{conservative:78,moderate:76,aggressive:55}, desc:'The leading global cell tower REIT with 225,000+ sites. 5G densification is a multi-decade tailwind. Long-term leases with built-in rent escalators provide highly predictable cash flows.' },
-  PLD:  { name:'Prologis Inc.',       sector:'Real Estate',     tags:['reit','industrial','dividend'],      color:'#059669', pe:'36.4', yld:'3.4%', beta:0.92, cap:'$96B',   lo:102, hi:135, aB:16,aH:10,aS:2, riskScore:{conservative:76,moderate:78,aggressive:58}, desc:'The world\'s largest industrial REIT, owning 1+ billion sq ft of warehouses. E-commerce and supply chain reshoring drive record rent growth from Amazon, Walmart, and FedEx tenants.' },
-
-  // ── COMMUNICATIONS ──
-  NFLX: { name:'Netflix Inc.',        sector:'Communications',  tags:['tech','growth','consumer'],         color:'#dc2626', pe:'42.1', yld:'0.0%', beta:1.38, cap:'$365B',  lo:600, hi:800, aB:26,aH:10,aS:4, riskScore:{conservative:56,moderate:78,aggressive:86}, desc:'Ad-supported tier and password sharing crackdown unlocked a new growth chapter. Gaming and live events are expanding Netflix\'s total addressable market beyond streaming.' },
-  DIS:  { name:'Walt Disney Co.',     sector:'Communications',  tags:['consumer','media','dividend'],      color:'#1d4ed8', pe:'22.4', yld:'0.8%', beta:1.02, cap:'$204B',  lo:95,  hi:125, aB:22,aH:12,aS:4, riskScore:{conservative:62,moderate:74,aggressive:70}, desc:'ESPN, theme parks, and the Marvel/Star Wars franchise create irreplaceable IP. Streaming profitability is inflecting as Disney+ scales toward FCF positive in 2026.' },
-  T:    { name:'AT&T Inc.',           sector:'Communications',  tags:['telecom','dividend','value'],       color:'#059669', pe:'10.2', yld:'5.2%', beta:0.62, cap:'$112B',  lo:17,  hi:23,  aB:10,aH:16,aS:6, riskScore:{conservative:70,moderate:65,aggressive:48}, desc:'Post-DirecTV spin-off, AT&T is a pure fiber and wireless telecom play. 5%+ dividend yield with improving free cash flow and declining debt provides income stability.' },
-};
-// Remove the null alias
-delete DB.AMZN_C;
-
-const NEWS = {
-  AAPL: ['Apple Vision Pro 2 in active development for 2026 launch', 'iPhone 17 pre-orders exceed analyst estimates by 12%', 'Apple Services posts all-time quarterly revenue record'],
-  MSFT: ['Copilot enterprise adoption reaches 1M+ seats ahead of schedule', 'Azure AI revenue accelerates 33% year-over-year', 'Microsoft raises dividend 10%, authorizes $60B buyback'],
-  NVDA: ['Blackwell GPU demand exceeds supply 3x, CEO Jensen Huang confirms', 'NVDA added to 14 major institutional portfolios this quarter', 'Next-generation Rubin architecture announced for 2026'],
-  META: ['Meta AI assistant crosses 1 billion monthly active users', 'Llama 4 outperforms competitors on key benchmarks', 'Reality Labs headset shipments up 40% year-over-year'],
-  AMZN: ['AWS secures 5-year $12B federal government cloud contract', 'Amazon Advertising grows 23%, approaching Google Display in scale', 'Prime membership surpasses 230 million subscribers globally'],
-  GOOGL:['Alphabet beats estimates; Google Search holds 91% global market share', 'Waymo robotaxi expands to 10 new US cities', 'YouTube Shorts ad monetization launches globally'],
-  CRM:  ['Salesforce Agentforce surpasses 1,000 paid enterprise deployments', 'Q4 revenue beats estimates; raises full-year guidance', 'New partnership with Google Cloud deepens AI integration'],
-  AMD:  ['MI300X AI GPU demand tracking ahead of $5B revenue forecast', 'EPYC server CPU market share reaches 26% — record high', 'New partnership with Microsoft Azure for AI training workloads'],
-  NVDA: ['Blackwell GPU demand exceeds supply 3x, CEO confirms', 'NVDA added to 14 major institutional portfolios', 'Rubin architecture platform announced for 2026'],
-  JNJ:  ['FDA approval granted for breakthrough cancer immunotherapy', 'Johnson & Johnson raises full-year EPS guidance on MedTech strength', '62nd consecutive year of dividend growth confirmed'],
-  LLY:  ['Mounjaro obesity drug sales surpass $10B annual run rate', 'New GLP-1 oral pill shows strong Phase 3 trial results', 'Analyst upgrades to Strong Buy; raises target to $1,000'],
-  UNH:  ['UnitedHealth raises full-year guidance on strong Optum performance', 'Membership growth exceeds expectations across all segments', 'New value-based care contracts with 15 major hospital systems'],
-  JPM:  ['JPMorgan reports record Q4 profit; raises dividend 15%', 'Investment banking revenues surge 46% on deal-making revival', 'Jamie Dimon flags caution on geopolitical risks despite strong results'],
-  V:    ['Visa cross-border transaction volume grows 18% year-over-year', 'New partnership with major central banks for digital currency infrastructure', 'Share buyback accelerates; 7th consecutive year of double-digit EPS growth'],
-  BRK_B:['Berkshire reveals new $4.7B position in Japanese trading firms', 'Cash reserves reach all-time record of $189 billion', 'Buffett: "American business is better positioned than ever"'],
-  TSLA: ['Tesla FSD Version 13 achieves safety record milestone in fleet data', 'Optimus humanoid robot enters limited production ahead of schedule', 'Energy storage deployments up 180% year-over-year — record quarter'],
-  COST: ['Costco comparable sales up 7.2%; membership renewal rate hits 93.2%', 'New 25-cent hot dog combo price lock announced through 2030', 'E-commerce sales accelerate 25%; gold bullion sales continue to surge'],
-  VTI:  ['Vanguard cuts VTI expense ratio to record-low 0.03%', 'Total ETF industry inflows reach $800B; VTI leads all funds', 'Morningstar reaffirms 5-star Gold rating for VTI long-term prospects'],
-  VOO:  ['S&P 500 hits new all-time high; VOO AUM surpasses $1.2 trillion', 'Vanguard reduces VOO expense ratio to match VTI at 0.03%', 'Institutional demand for passive S&P 500 exposure continues record pace'],
-  QQQ:  ['Nasdaq 100 posts best quarterly return in 2 years', 'AI-driven earnings growth accelerates for QQQ top 10 holdings', 'Invesco reports record QQQ inflows from institutional investors'],
-  NEE:  ['NextEra secures 5,000 MW of new renewable contracts', 'Florida Power & Light rate case approved; supports earnings growth', 'Record data center power demand drives utility backlog to all-time high'],
-  XOM:  ['Exxon Pioneer integration delivers $1.2B synergies ahead of schedule', 'Permian Basin production hits record; raises 2025 output target', 'Buyback program increased to $20B; dividend raised for 41st consecutive year'],
-  PG:   ['Procter & Gamble raises quarterly dividend; 67th consecutive annual increase', 'Pricing power holds as volume growth returns; raises full-year guidance', 'AI-driven supply chain optimization reduces COGS by $300M annually'],
-  KO:   ['Coca-Cola organic revenue growth of 9%; raises full-year guidance', 'New sugar-free product launches outperform expectations in emerging markets', 'Berkshire Hathaway adds to KO position; now 400M+ shares held'],
-  NFLX: ['Netflix Q4 subscriber additions smash estimates at 19M new members', 'Ad-supported tier now 50%+ of new sign-ups in launch markets', 'Live events strategy expands: NFL Christmas Day games draw record viewership'],
-  AMT:  ['American Tower signs 10-year 5G densification agreement with T-Mobile', 'India tower business sale proceeds accelerate debt reduction timeline', 'Raises quarterly dividend 5%; 13th consecutive year of double-digit dividend growth'],
-};
-
-/* ════════════════════════════════════
-   PORTFOLIO GENERATION ENGINE
-   Dynamically scores all 60 stocks
-   against every profile dimension
-════════════════════════════════════ */
-function getAlloc(risk) {
-  return {
-    conservative:[{l:'Dividend & Defensive Stocks',p:35,c:'#166534'},{l:'Index ETFs',p:30,c:'#16a34a'},{l:'Blue-Chip Growth',p:20,c:'#22c55e'},{l:'Healthcare / Utilities',p:15,c:'#4ade80'}],
-    moderate:    [{l:'Growth Stocks',p:35,c:'#052e16'},{l:'Large Cap Tech',p:28,c:'#166534'},{l:'Index ETFs',p:22,c:'#22c55e'},{l:'Dividend / International',p:15,c:'#4ade80'}],
-    aggressive:  [{l:'High-Growth Tech',p:40,c:'#052e16'},{l:'AI & Semiconductors',p:28,c:'#166534'},{l:'Small/Mid Cap Growth',p:20,c:'#22c55e'},{l:'Speculative / Thematic',p:12,c:'#4ade80'}],
-  }[risk] || [];
-}
-
-function pickStocks(profile) {
-  const { risk, horizon, wantDiv, wantETF, age, goal, react, income, exp, avoid } = profile;
-
-  // Collect user's avoided industries (from chip text)
-  const avoidLower = (avoid || '').toLowerCase();
-  const avoidFossil  = avoidLower.includes('fossil');
-  const avoidDefense = avoidLower.includes('defense') || avoidLower.includes('weapons');
-
-  // Pull seed from current time so picks vary each session
-  const seed = Date.now();
-  function seededRand(i) {
-    const x = Math.sin(seed + i * 9301 + 49297) * 233280;
-    return (x - Math.floor(x));
+function updateDots() {
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.getElementById('sd' + i);
+    if (!d) continue;
+    d.className = 'sd ' + (i < curStep ? 'done' : i === curStep ? 'active' : 'todo');
   }
-
-  const scored = Object.entries(DB)
-    .filter(([, d]) => d !== null)
-    .map(([sym, d], idx) => {
-      // --- base score from risk profile ---
-      let score = d.riskScore[risk] ?? 70;
-
-      // --- ETF preference ---
-      if (d.sector === 'ETF' && !wantETF) score -= 40;
-      if (d.sector === 'ETF' && wantETF)  score += 5;
-
-      // --- Dividend preference ---
-      const yldNum = parseFloat(d.yld) || 0;
-      if (wantDiv  && yldNum >= 2.0) score += 14;
-      if (wantDiv  && yldNum >= 3.0) score += 8;
-      if (!wantDiv && yldNum >= 3.0) score -= 8;
-
-      // --- Horizon adjustments ---
-      if (horizon === 'short') {
-        // Short horizon: favour low-beta, dividends, defensive
-        if (d.beta <= 0.8) score += 12;
-        if (d.beta >= 1.5) score -= 18;
-        if (d.tags.includes('speculative')) score -= 20;
-      }
-      if (horizon === 'vlong') {
-        // Long horizon: growth and compounders rewarded
-        if (d.tags.includes('growth')) score += 10;
-        if (d.beta >= 1.2 && risk === 'aggressive') score += 6;
-      }
-
-      // --- Age adjustments ---
-      if (age > 55 && d.beta < 0.7) score += 10;
-      if (age > 55 && d.beta > 1.5) score -= 14;
-      if (age < 30 && d.tags.includes('growth')) score += 8;
-
-      // --- Goal adjustments ---
-      if (goal === 'income' && yldNum >= 2.5) score += 15;
-      if (goal === 'income' && yldNum === 0)   score -= 10;
-      if (goal === 'retire' && d.tags.includes('defensive')) score += 8;
-      if (goal === 'home'   && horizon === 'short' && d.beta > 1.4) score -= 12;
-      if (goal === 'wealth' && d.tags.includes('growth')) score += 8;
-
-      // --- Market-crash reaction ---
-      if (react === 'sell' && d.beta > 1.3) score -= 12; // can't handle volatility
-      if (react === 'buymore' && d.tags.includes('growth')) score += 6;
-
-      // --- Avoid industries ---
-      if (avoidFossil  && d.sector === 'Energy' && d.tags.includes('energy') && !d.tags.includes('clean')) score -= 60;
-      if (avoidDefense && d.tags.includes('defense')) score -= 60;
-
-      // --- Small jitter so same-scoring stocks vary per session ---
-      score += (seededRand(idx) - 0.5) * 8;
-
-      // --- Cap & floor ---
-      score = Math.min(99, Math.max(1, Math.round(score)));
-
-      return { sym, score, ...d };
-    })
-    .sort((a, b) => b.score - a.score);
-
-  // Remove duplicate sector ETFs (keep highest-scored one per sector ETF type)
-  const seenETFSectors = new Set();
-  return scored.filter(s => {
-    if (s.sector !== 'ETF') return true;
-    if (seenETFSectors.has(s.sym.slice(0,3))) return false;
-    seenETFSectors.add(s.sym.slice(0,3));
-    return true;
-  });
+  const stepLabel = document.getElementById('stepLabel');
+  if (stepLabel) stepLabel.textContent = LABELS[curStep - 1];
 }
 
-/* ── Tier state ── */
-let userTier = 'free'; // 'free' | 'pro'
-let lastPicks = [];    // all 12 picks, stored after analyze
-
-function buildCard(s, tier) {
-  const sym = s.sym;
-  const qkey = sym === 'BRK_B' ? 'BRK-B' : sym;
-  const q = Q[qkey] || Q[sym];
-  const priceStr = q ? '$' + fmt(q.price) : '$' + ((s.lo + s.hi) / 2).toFixed(2);
-  const price = q ? q.price : (s.lo + s.hi) / 2;
-  const c = chgInfo(q);
-  const upside = (((s.hi / price) - 1) * 100).toFixed(0);
-  const total = s.aB + s.aH + s.aS;
-  const bpct = Math.round((s.aB / total) * 100);
-  const dispSym = sym === 'BRK_B' ? 'BRK/B' : sym;
-  const newsArr = NEWS[sym] || NEWS[sym.replace('_', '')] || [];
-  const isPro = tier === 'pro';
-
-  // Free tier: stripped card — only price, company name, description, profile match
-  if (!isPro) {
-    return `
-    <div class="scard">
-      <div class="scard-hd">
-        <div style="display:flex;align-items:center">
-          <div class="scard-logo" style="background:${s.color}">${dispSym.slice(0, 3)}</div>
-          <div class="scard-meta"><h3>${dispSym}</h3><span>${s.name}</span></div>
-        </div>
-        <div class="scpb">
-          <div class="cp">${priceStr}</div>
-          <div class="pb ${c.up ? 'pu' : 'pd'}">${c.txt}</div>
-        </div>
-      </div>
-      <div class="scard-bd">
-        <div class="mr">
-          <div class="mr-top"><span>Profile Match</span><span>${s.score}%</span></div>
-          <div class="mr-track"><div class="mr-fill" data-w="${s.score}" style="width:0"></div></div>
-        </div>
-        <p class="sdesc">${s.desc}</p>
-        <!-- Locked overlay for analyst data -->
-        <div style="background:var(--g50);border:1px dashed var(--g200);border-radius:10px;padding:14px;margin-top:12px;text-align:center">
-          <div style="font-size:12px;font-weight:700;color:var(--g700);margin-bottom:4px">Analyst Ratings &amp; Price Targets</div>
-          <div style="font-size:11px;color:var(--gray500);margin-bottom:10px">12-month targets, consensus ratings, and breaking news are Pro features.</div>
-          <button onclick="openM('upgrade')" style="background:var(--g600);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Upgrade to Pro</button>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  // Pro tier: full card with everything
-  return `
-  <div class="scard">
-    <div class="scard-hd">
-      <div style="display:flex;align-items:center">
-        <div class="scard-logo" style="background:${s.color}">${dispSym.slice(0, 3)}</div>
-        <div class="scard-meta"><h3>${dispSym}</h3><span>${s.name}</span></div>
-      </div>
-      <div class="scpb">
-        <div class="cp">${priceStr}</div>
-        <div class="pb ${c.up ? 'pu' : 'pd'}">${c.txt}</div>
-      </div>
-    </div>
-    <div class="scard-bd">
-      <div class="mr">
-        <div class="mr-top"><span>Profile Match</span><span>${s.score}%</span></div>
-        <div class="mr-track"><div class="mr-fill" data-w="${s.score}" style="width:0"></div></div>
-      </div>
-      <div class="met-row">
-        <div class="met"><div class="mv">${s.pe}</div><div class="mk">P/E</div></div>
-        <div class="met"><div class="mv">${s.yld}</div><div class="mk">Yield</div></div>
-        <div class="met"><div class="mv">${s.beta}</div><div class="mk">Beta</div></div>
-        <div class="met"><div class="mv">${s.cap}</div><div class="mk">Cap</div></div>
-      </div>
-      <div class="tbox">
-        <div>
-          <div class="tb-l">12-Month Analyst Target</div>
-          <div class="tb-r">$${s.lo} – $${s.hi}</div>
-        </div>
-        <div class="tb-up">+${upside}% upside</div>
-      </div>
-      <div class="ar">
-        <span class="abadge a-sb">STRONG BUY</span>
-        <span style="font-size:11px;color:var(--gray500);font-weight:600">${s.aB}/${total} analysts (${bpct}%)</span>
-      </div>
-      <p class="sdesc">${s.desc}</p>
-      <div class="nb">
-        ${newsArr.slice(0, 2).map(n => `
-        <div class="ni">
-          <div class="nd"></div>
-          <div><div class="nh">${n}</div><div class="nt">${Math.floor(Math.random() * 10 + 1)}h ago</div></div>
-        </div>`).join('')}
-      </div>
-    </div>
-    <div class="scard-ft">
-      <button class="bsm bsm-p" onclick="showToast('${dispSym} added to watchlist')">+ Watchlist</button>
-      <button class="bsm bsm-s" onclick="openM('det_${sym}')">Full Analysis</button>
-    </div>
-  </div>`;
+function showStep(n) {
+  document.querySelectorAll('.qstep').forEach(e => e.classList.remove('active'));
+  document.getElementById('step' + n)?.classList.add('active');
+  curStep = n;
+  updateDots();
 }
 
-function renderResults() {
-  if (lastPicks.length === 0) return;
-  if (userTier === 'pro') {
-    // Show all 12 with full data
-    document.getElementById('freeResults').style.display = 'none';
-    document.getElementById('premGate').style.display = 'none';
-    document.getElementById('proResults').style.display = 'block';
-    document.getElementById('proGrid').innerHTML = lastPicks.slice(0, 12).map(s => buildCard(s, 'pro')).join('');
+function nextS(f) {
+  if (f < TOTAL) showStep(f + 1);
+}
+
+function prevS(f) {
+  if (f > 1) showStep(f - 1);
+}
+
+function sel(id, val, el) {
+  const input = document.getElementById(id);
+  if (input) input.value = val;
+  const group = el.closest('.rg');
+  if (group) group.querySelectorAll('.rc').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function tc(el) {
+  el.classList.toggle('sel');
+}
+
+function yn(id, val, el) {
+  const input = document.getElementById(id);
+  if (input) input.value = val;
+  const group = el.closest('.yn');
+  if (group) group.querySelectorAll('.ync').forEach(c => c.classList.remove('sy', 'sn'));
+  el.classList.add(val === 'yes' ? 'sy' : 'sn');
+}
+
+/* -----------------------------
+   MODAL
+----------------------------- */
+function openM(type) {
+  const modal = document.getElementById('modal');
+  const content = document.getElementById('mContent');
+  if (!modal || !content) return;
+
+  if (type.startsWith('det_')) {
+    const sym = type.replace('det_', '');
+    content.innerHTML = `
+      <h3>${escapeHtml(sym)} — Full Analysis</h3>
+      <p>Detailed analysis is coming next. This demo currently shows live prices, analyst targets, and recent news.</p>
+      <button class="btn-modal" onclick="closeM()">Close</button>
+    `;
   } else {
-    // Show 4 free (stripped) + gate for remaining 8
-    document.getElementById('freeResults').style.display = 'block';
-    document.getElementById('premGate').style.display = 'block';
-    document.getElementById('proResults').style.display = 'none';
-    document.getElementById('freeGrid').innerHTML = lastPicks.slice(0, 4).map(s => buildCard(s, 'free')).join('');
+    content.innerHTML = MODAL_CONTENT[type] || `
+      <h3>StockWise Pro</h3>
+      <p>This section is not connected yet.</p>
+      <button class="btn-modal" onclick="closeM()">Close</button>
+    `;
   }
-  setTimeout(() => {
-    document.querySelectorAll('.mr-fill').forEach(el => { el.style.width = el.dataset.w + '%'; });
-  }, 100);
+
+  modal.classList.add('open');
+}
+
+function closeM() {
+  document.getElementById('modal')?.classList.remove('open');
+}
+
+function closeMOut(e) {
+  if (e.target === document.getElementById('modal')) closeM();
 }
 
 function unlockPro() {
   userTier = 'pro';
   renderResults();
-  showToast('Pro access activated — all 12 picks unlocked!');
+  showToast('Pro access activated');
 }
 
-<script>
+/* -----------------------------
+   LIVE MARKET DATA
+----------------------------- */
+(function restoreCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.ts > CACHE_TTL) return;
+    Q = parsed.data || {};
+  } catch {}
+})();
+
+function chgInfo(q) {
+  if (!q || q.price == null || q.prev == null || q.prev === 0) {
+    return { pct: null, up: true, txt: '—' };
+  }
+  const p = ((q.price - q.prev) / q.prev) * 100;
+  return {
+    pct: p,
+    up: p >= 0,
+    txt: `${p >= 0 ? '▲' : '▼'} ${Math.abs(p).toFixed(2)}%`
+  };
+}
+
+function normalizeYahooMeta(meta) {
+  if (!meta || !meta.regularMarketPrice) return null;
+  return {
+    price: meta.regularMarketPrice,
+    prev: meta.chartPreviousClose || meta.previousClose || meta.regularMarketPrice,
+    hi52: meta.fiftyTwoWeekHigh,
+    lo52: meta.fiftyTwoWeekLow
+  };
+}
+
+async function yFetch(sym) {
+  const u1 = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=2d`;
+  const u2 = `https://query2.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=2d`;
+
+  async function tryUrl(url) {
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(7000) });
+    const data = await res.json();
+    const meta = data?.chart?.result?.[0]?.meta;
+    return normalizeYahooMeta(meta);
+  }
+
+  try {
+    const result = await Promise.any([tryUrl(u1), tryUrl(u2)]);
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchOne(sym) {
+  const q = await yFetch(sym);
+  if (!q) return;
+  Q[sym] = q;
+  Q[sym.replace(/[^A-Za-z0-9]/g, '')] = q;
+
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: Q }));
+  } catch {}
+
+  renderTicker();
+  renderHeroStocks();
+  renderMarketBar();
+}
+
+function refreshAllData() {
+  const allSyms = [...new Set([...TICK_SYMS, ...HERO_SYMS, ...INDEX_SYMS])];
+
+  if (Object.keys(Q).length > 0) {
+    renderTicker();
+    renderHeroStocks();
+    renderMarketBar();
+  }
+
+  allSyms.forEach(sym => fetchOne(sym));
+}
+
+function renderTicker() {
+  const el = document.getElementById('tickerTrack');
+  if (!el) return;
+
+  let html = '';
+  for (let pass = 0; pass < 2; pass++) {
+    TICK_SYMS.forEach(sym => {
+      const q = Q[sym] || Q[sym.replace('-', '')];
+      if (q) {
+        const c = chgInfo(q);
+        html += `
+          <span class="ti">
+            <span class="ti-sym">${escapeHtml(sym)}</span>
+            <span class="ti-p">$${fmt(q.price)}</span>
+            <span class="${c.up ? 'ti-up' : 'ti-dn'}">${c.txt}</span>
+          </span>
+        `;
+      } else {
+        html += `
+          <span class="ti">
+            <span class="ti-sym">${escapeHtml(sym)}</span>
+            <span class="ti-p">—</span>
+          </span>
+        `;
+      }
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+function renderHeroStocks() {
+  const el = document.getElementById('heroStocks');
+  if (!el) return;
+
+  const colors = {
+    AAPL: 'linear-gradient(135deg,#1d4ed8,#3b82f6)',
+    MSFT: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+    NVDA: 'linear-gradient(135deg,#059669,#10b981)',
+    AMZN: 'linear-gradient(135deg,#b45309,#f59e0b)'
+  };
+
+  const names = {
+    AAPL: 'Apple Inc.',
+    MSFT: 'Microsoft',
+    NVDA: 'NVIDIA Corp.',
+    AMZN: 'Amazon.com'
+  };
+
+  el.innerHTML = HERO_SYMS.map(sym => {
+    const q = Q[sym];
+    const c = chgInfo(q);
+    return `
+      <div class="hstock">
+        <div class="hsl">
+          <div class="hsi" style="background:${colors[sym] || 'linear-gradient(135deg,#16a34a,#4ade80)'}">${sym.slice(0,3)}</div>
+          <div>
+            <div class="hs-sym">${sym}</div>
+            <div class="hs-nm">${names[sym] || sym}</div>
+          </div>
+        </div>
+        <div>
+          <div class="hs-price">${q ? '$' + fmt(q.price) : '<span class="shimmer"></span>'}</div>
+          <div class="hs-chg ${c.up ? 'c-up' : 'c-dn'}">${c.txt}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const hasData = Object.keys(Q).length > 0;
+  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const status = document.getElementById('heroStatusTxt');
+  const chip = document.getElementById('liveChip');
+
+  if (status) status.textContent = hasData ? `Updated ${now}` : 'Loading…';
+  if (chip) chip.textContent = hasData ? 'Live market data connected' : 'Connecting to market data…';
+}
+
+function renderMarketBar() {
+  const map = {
+    '^GSPC': 'mb-sp500',
+    '^IXIC': 'mb-ndx',
+    '^DJI': 'mb-dow',
+    '^VIX': 'mb-vix',
+    '^TNX': 'mb-tenyear'
+  };
+
+  Object.entries(map).forEach(([sym, id]) => {
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    const q = Q[sym] || Q[sym.replace(/\^/g, '')];
+    if (!q) return;
+
+    const c = chgInfo(q);
+    const wrapper = target.parentElement;
+    if (!wrapper) return;
+
+    const isTNX = sym === '^TNX';
+    wrapper.innerHTML = `
+      <span class="mb-label">${wrapper.querySelector('.mb-label')?.textContent || ''}</span>
+      <span class="mb-val">${isTNX ? fmt(q.price) + '%' : fmt(q.price)}</span>
+      <span class="mb-chg ${c.up ? 'mb-up' : 'mb-dn'}">${c.txt}</span>
+    `;
+  });
+}
+
+/* -----------------------------
+   ALLOCATION
+----------------------------- */
+function getAlloc(risk) {
+  return {
+    conservative: [
+      { l: 'Dividend & Defensive', p: 35, c: '#166534' },
+      { l: 'Index ETFs', p: 30, c: '#16a34a' },
+      { l: 'Blue-Chip Growth', p: 20, c: '#22c55e' },
+      { l: 'Healthcare / Utilities', p: 15, c: '#4ade80' }
+    ],
+    moderate: [
+      { l: 'Growth Stocks', p: 35, c: '#052e16' },
+      { l: 'Large Cap Tech', p: 28, c: '#166534' },
+      { l: 'Index ETFs', p: 22, c: '#22c55e' },
+      { l: 'Dividend / International', p: 15, c: '#4ade80' }
+    ],
+    aggressive: [
+      { l: 'High-Growth Tech', p: 40, c: '#052e16' },
+      { l: 'AI & Semis', p: 28, c: '#166534' },
+      { l: 'Mid-Cap Growth', p: 20, c: '#22c55e' },
+      { l: 'Speculative', p: 12, c: '#4ade80' }
+    ]
+  }[risk] || [];
+}
+
+/* -----------------------------
+   RESULTS CARDS
+----------------------------- */
+function buildNewsHtml(newsItems, tier = 'free') {
+  const visible = tier === 'pro' ? newsItems.slice(0, 3) : newsItems.slice(0, 2);
+
+  if (!visible.length) {
+    return `
+      <div class="ni">
+        <div class="nd"></div>
+        <div>
+          <div class="nh">No recent live news found for this stock.</div>
+          <div class="nt">Live news feed</div>
+        </div>
+      </div>
+    `;
+  }
+
+  return visible.map(item => `
+    <div class="ni">
+      <div class="nd"></div>
+      <div>
+        <div class="nh">
+          <a href="${escapeHtml(item.url || '#')}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;">
+            ${escapeHtml(item.headline)}
+          </a>
+        </div>
+        <div class="nt">${escapeHtml(item.source || 'Source')}${item.datetime ? ' · ' + fmtDate(item.datetime) : ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildCard(s, tier) {
+  const up = s.changePct != null && Number(s.changePct) >= 0;
+  const pbClass = up ? 'pu' : 'pd';
+  const riskLabel = s.risk ? s.risk.charAt(0).toUpperCase() + s.risk.slice(1) : 'Moderate';
+
+  return `
+    <div class="scard">
+      <div class="scard-hd">
+        <div style="display:flex;align-items:center">
+          <div class="scard-logo" style="background:linear-gradient(135deg,#16a34a,#4ade80)">
+            ${escapeHtml((s.sym || '').slice(0, 2))}
+          </div>
+          <div class="scard-meta">
+            <h3>${escapeHtml(s.sym || '')}</h3>
+            <span>${escapeHtml(s.name || '')}</span>
+          </div>
+        </div>
+        <div class="scpb">
+          <div class="cp">${fmtMoney(s.price)}</div>
+          <div class="pb ${pbClass}">${fmtPct(s.changePct)}</div>
+        </div>
+      </div>
+
+      <div class="scard-bd">
+        <div class="mr">
+          <div class="mr-top">
+            <span>Profile Fit</span>
+            <span>${s.fit || 0}/100</span>
+          </div>
+          <div class="mr-track">
+            <div class="mr-fill" data-w="${s.fit || 0}" style="width:0%"></div>
+          </div>
+        </div>
+
+        <div class="met-row">
+          <div class="met">
+            <div class="mv">${fmtMoney(s.target)}</div>
+            <div class="mk">Target</div>
+          </div>
+          <div class="met">
+            <div class="mv">${fmtMoney(s.targetHigh)}</div>
+            <div class="mk">High PT</div>
+          </div>
+          <div class="met">
+            <div class="mv">${fmtMoney(s.targetLow)}</div>
+            <div class="mk">Low PT</div>
+          </div>
+          <div class="met">
+            <div class="mv">${escapeHtml(riskLabel)}</div>
+            <div class="mk">Risk</div>
+          </div>
+        </div>
+
+        <div class="tbox">
+          <div class="tb-l">Recommendation</div>
+          <div class="tb-r">${escapeHtml(s.rating || 'Hold')}</div>
+        </div>
+
+        <div class="nb">
+          ${buildNewsHtml(s.news || [], tier)}
+        </div>
+
+        <div class="sdesc">${escapeHtml(s.desc || '')}</div>
+      </div>
+
+      <div class="scard-ft">
+        <button class="bsm bsm-p" onclick="showToast('${escapeHtml(s.sym || '')} added to watchlist')">+ Watchlist</button>
+        <button class="bsm bsm-s" onclick="openM('det_${escapeHtml(s.sym || '')}')">Full Analysis</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderResults() {
+  if (!lastPicks.length) return;
+
+  const freeResults = document.getElementById('freeResults');
+  const premGate = document.getElementById('premGate');
+  const proResults = document.getElementById('proResults');
+  const freeGrid = document.getElementById('freeGrid');
+  const proGrid = document.getElementById('proGrid');
+
+  if (userTier === 'pro') {
+    if (freeResults) freeResults.style.display = 'none';
+    if (premGate) premGate.style.display = 'none';
+    if (proResults) proResults.style.display = 'block';
+    if (proGrid) proGrid.innerHTML = lastPicks.slice(0, 12).map(s => buildCard(s, 'pro')).join('');
+  } else {
+    if (freeResults) freeResults.style.display = 'block';
+    if (premGate) premGate.style.display = 'block';
+    if (proResults) proResults.style.display = 'none';
+    if (freeGrid) freeGrid.innerHTML = lastPicks.slice(0, 4).map(s => buildCard(s, 'free')).join('');
+  }
+
+  setTimeout(() => {
+    document.querySelectorAll('.mr-fill').forEach(el => {
+      el.style.width = (el.dataset.w || 0) + '%';
+    });
+  }, 100);
+}
+
+/* -----------------------------
+   QUIZ ANALYZE
+----------------------------- */
 async function analyze() {
-  const age = parseInt(document.getElementById('q-age').value);
-  const risk = document.getElementById('q-risk').value;
-  const amt = document.getElementById('q-amount').value;
-  const hor = document.getElementById('q-horizon').value;
+  const age = parseInt(document.getElementById('q-age')?.value);
+  const risk = document.getElementById('q-risk')?.value;
+  const amt = document.getElementById('q-amount')?.value;
+  const hor = document.getElementById('q-horizon')?.value;
 
   if (!age || age < 18) { showToast('Please enter your age in Step 1'); showStep(1); return; }
   if (!amt) { showToast('Please enter your investment amount in Step 2'); showStep(2); return; }
@@ -1559,15 +1599,17 @@ async function analyze() {
   if (!hor) { showToast('Please select your investment horizon in Step 3'); showStep(3); return; }
 
   const btn = document.getElementById('analyzeBtn');
-  btn.classList.add('analyzing');
-  btn.disabled = true;
+  if (btn) {
+    btn.classList.add('analyzing');
+    btn.disabled = true;
+  }
 
-  const wDiv = document.getElementById('q-div').value === 'yes';
-  const wETF = document.getElementById('q-etf').value !== 'no';
-  const goal = document.getElementById('q-pg').value || 'wealth';
-  const react = document.getElementById('q-react').value || 'hold';
-  const income = document.getElementById('q-income').value || '';
-  const exp = document.getElementById('q-exp').value || 'beginner';
+  const wDiv = document.getElementById('q-div')?.value === 'yes';
+  const wETF = document.getElementById('q-etf')?.value !== 'no';
+  const goal = document.getElementById('q-pg')?.value || 'wealth';
+  const react = document.getElementById('q-react')?.value || 'hold';
+  const income = document.getElementById('q-income')?.value || '';
+  const exp = document.getElementById('q-exp')?.value || 'beginner';
   const avoidChips = [...document.querySelectorAll('#step6 .chips .chip.sel')]
     .map(c => c.textContent.toLowerCase())
     .join(' ');
@@ -1593,12 +1635,9 @@ async function analyze() {
 
     const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data.error || 'Request failed');
-    }
+    if (!res.ok) throw new Error(data.error || 'Request failed');
 
-    // 🔥 THIS IS WHAT YOU WERE MISSING
-    lastPicks = data.recommendations.map((s) => ({
+    lastPicks = (data.recommendations || []).map(s => ({
       sym: s.symbol,
       name: s.name,
       price: s.currentPrice,
@@ -1613,602 +1652,155 @@ async function analyze() {
       news: s.news || []
     }));
 
-    // update UI
-    document.getElementById('fitScore').textContent =
-      Math.round(lastPicks.reduce((sum, s) => sum + s.fit, 0) / lastPicks.length);
+    const fitScore = document.getElementById('fitScore');
+    if (fitScore && lastPicks.length) {
+      fitScore.textContent = Math.round(lastPicks.reduce((sum, s) => sum + (s.fit || 0), 0) / lastPicks.length);
+    }
+
+    const resMeta = document.getElementById('resMeta');
+    if (resMeta) {
+      const rl = { conservative: 'Conservative', moderate: 'Moderate', aggressive: 'Aggressive' };
+      const hl = { short: '1–2 yr', medium: '3–5 yr', long: '6–15 yr', vlong: '15+ yr' };
+      resMeta.textContent = `Age ${age} · ${rl[risk] || risk} risk · ${hl[hor] || hor} horizon · ${amt} starting`;
+    }
+
+    const alloc = getAlloc(risk);
+    const allocBar = document.getElementById('allocBar');
+    const allocLeg = document.getElementById('allocLeg');
+    if (allocBar) allocBar.innerHTML = alloc.map(a => `<div class="bar-seg" style="width:${a.p}%;background:${a.c}"></div>`).join('');
+    if (allocLeg) allocLeg.innerHTML = alloc.map(a => `<div class="bli"><div class="bld" style="background:${a.c}"></div>${a.p}% ${a.l}</div>`).join('');
 
     renderResults();
 
-    document.getElementById('results').classList.add('visible');
-    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
-
+    const results = document.getElementById('results');
+    if (results) {
+      results.classList.add('visible');
+      results.scrollIntoView({ behavior: 'smooth' });
+    }
   } catch (err) {
     console.error(err);
     showToast('Failed to load recommendations');
   } finally {
-    btn.classList.remove('analyzing');
-    btn.disabled = false;
+    if (btn) {
+      btn.classList.remove('analyzing');
+      btn.disabled = false;
+    }
   }
 }
-</script>
 
-/* ════════════════════════════════════
-   AI LEARNING CENTER
-   Pipeline:
-   1. Scrape 3 investing sources via allorigins proxy
-   2. Strip HTML → plain text chunks
-   3. Send text + question to Claude API
-   4. Render structured answer
-════════════════════════════════════ */
-
+/* -----------------------------
+   LEARNING CENTER
+----------------------------- */
 function quickAsk(el) {
-  // works for both <div class="sq"> chips and <div class="ct"> topic rows
-  // strip any leading arrow/emoji
   const raw = el.querySelector('.gc-term')
     ? el.querySelector('.gc-term').childNodes[0].textContent.trim()
     : el.textContent.replace(/^[\s→✓]+/, '').trim();
-  document.getElementById('aiInput').value = raw;
+
+  const aiInput = document.getElementById('aiInput');
+  if (aiInput) aiInput.value = raw;
   goPage('learn');
   setTimeout(() => askAI(), 80);
 }
 
-// Trusted investing education sources we scrape
-function buildSearchUrls(query) {
-  const q = encodeURIComponent(query + ' investing explained beginner');
-  return [
-    `https://www.investopedia.com/search?q=${encodeURIComponent(query)}`,
-    `https://www.nerdwallet.com/search?q=${encodeURIComponent(query)}`,
-    `https://search.yahoo.com/search?p=${q}`,
-  ];
-}
-
-async function scrapeUrl(url) {
-  try {
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxy, { signal: AbortSignal.timeout(6000) });
-    if (!res.ok) return '';
-    const json = await res.json();
-    const html = json.contents || '';
-    // Strip all tags, scripts, styles, nav, footer cruft → plain text
-    const clean = html
-      .replace(/<script[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[\s\S]*?<\/style>/gi, '')
-      .replace(/<nav[\s\S]*?<\/nav>/gi, '')
-      .replace(/<footer[\s\S]*?<\/footer>/gi, '')
-      .replace(/<header[\s\S]*?<\/header>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/\s{3,}/g, '\n\n')
-      .trim();
-    // Return first 2000 chars — enough context without blowing the token limit
-    return clean.slice(0, 2000);
-  } catch {
-    return '';
-  }
-}
-
-async function gatherWebContext(question) {
-  const urls = buildSearchUrls(question);
-  // Fetch all three in parallel, keep whatever succeeds
-  const results = await Promise.allSettled(urls.map(u => scrapeUrl(u)));
-  const texts = results
-    .filter(r => r.status === 'fulfilled' && r.value.length > 100)
-    .map(r => r.value);
-  return texts.join('\n\n---\n\n').slice(0, 5000); // cap at 5k chars for context
-}
-
-async function askAI() {
-  const input = document.getElementById('aiInput');
-  const question = input.value.trim();
-  if (!question) { showToast('⚠️ Please type a question first'); return; }
-
-  const btn = document.getElementById('askBtn');
-  btn.classList.add('ai-asking');
-  btn.disabled = true;
-
-  // Show the answer box immediately with loading state
-  document.getElementById('aaQuestion').textContent = question;
-  document.getElementById('aiAnswerWrap').style.display = 'block';
-  document.getElementById('aaContent').innerHTML = `
-    <div class="aa-loading">
-      <div style="display:flex;flex-direction:column;gap:10px;padding:8px 0;width:100%">
-        <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--gray500)">
-          <div style="width:18px;height:18px;border:2px solid var(--g200);border-top-color:var(--g600);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
-          <span id="loadStatus">Searching financial sources…</span>
-        </div>
-        <div style="background:var(--g50);border-radius:8px;padding:12px;font-size:12px;color:var(--gray500)">
-          <div style="display:flex;gap:8px;flex-wrap:wrap" id="sourceChips"></div>
-        </div>
-      </div>
-    </div>`;
-  document.getElementById('aiAnswerWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-  // Show which sources we're hitting
-  const sourceNames = ['Investopedia', 'NerdWallet', 'Yahoo Finance'];
-  document.getElementById('sourceChips').innerHTML = sourceNames.map(s =>
-    `<span style="background:white;border:1px solid var(--g200);padding:3px 10px;border-radius:100px;font-weight:600;color:var(--g700)">${s}</span>`
-  ).join('');
-
-  // Step 1: Gather web context
-  let webContext = '';
-  try {
-    webContext = await gatherWebContext(question);
-    document.getElementById('loadStatus').textContent = 'Analyzing sources and generating answer…';
-  } catch {
-    document.getElementById('loadStatus').textContent = 'Generating answer from knowledge base…';
-  }
-
-  // Step 2: Send to Claude API with web context injected into the prompt
-  const systemPrompt = `You are StockWise Pro's AI investing educator — a friendly, knowledgeable guide for beginner investors.
-
-Your job: answer the user's investing question clearly and helpfully, using the web context below as a reference where relevant.
-
-Formatting rules (strict):
-- Use <h4> for section headers
-- Use <ul><li> for bullet lists  
-- Use <strong> for key terms on first use
-- Start with a 1–2 sentence direct answer, then expand
-- Keep total response to 350–550 words
-- Write in plain English — no jargon without explanation
-- End with one practical "beginner tip" in a styled box: <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> [your tip here]</div>
-- Do NOT say "based on the web context" or reference your sources — just answer naturally
-- This is education only — never give personalized buy/sell advice`;
-
-  const userMessage = webContext
-    ? `Web context from financial sources:\n\n${webContext}\n\n---\n\nBeginner investor question: ${question}`
-    : `Beginner investor question: ${question}`;
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMessage }]
-      })
-    });
-
-    if (!response.ok) throw new Error(`API ${response.status}`);
-    const data = await response.json();
-    const answer = data.content?.[0]?.text;
-    if (!answer) throw new Error('empty response');
-
-    // Render the answer with source attribution bar
-    const sourceBadges = sourceNames.map(s =>
-      `<span style="font-size:11px;background:var(--g100);color:var(--g700);padding:2px 8px;border-radius:100px;font-weight:600">${s}</span>`
-    ).join(' ');
-
-    document.getElementById('aaContent').innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 24px;background:var(--g50);border-bottom:1px solid var(--g100);font-size:12px;color:var(--gray500)">
-        <span style="font-weight:600">Sources searched:</span> ${sourceBadges}
-      </div>
-      <div class="aa-body">${answer}</div>`;
-
-  } catch (err) {
-    // Full fallback — rich local knowledge base, no apology needed
-    document.getElementById('aaContent').innerHTML = `<div class="aa-body">${getLocalAnswer(question)}</div>`;
-  }
-
-  btn.classList.remove('ai-asking');
-  btn.disabled = false;
-}
-
-/* ─── Rich local knowledge base (used when API is unavailable) ─── */
 function getLocalAnswer(q) {
   const ql = q.toLowerCase();
-  const kb = [
-    {
-      keys: ['p/e','price to earn','price-to-earn'],
-      html: `<h4>What is a P/E Ratio?</h4><p>The <strong>Price-to-Earnings (P/E) ratio</strong> tells you how much investors pay for every $1 of a company's annual profit. Divide the stock price by earnings per share (EPS) to get it.</p><h4>How to Read It</h4><ul><li><strong>Under 15</strong> — Potentially undervalued, or slow-growth business</li><li><strong>15–25</strong> — Typical range for large, stable companies</li><li><strong>25–40</strong> — Growth company; investors expect strong future earnings</li><li><strong>40+</strong> — High expectations baked in; higher risk if growth disappoints</li></ul><h4>Key Rule</h4><p>Always compare P/E within the <em>same industry</em>. A P/E of 30 is cheap for a software company but expensive for a bank.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> P/E ratio alone doesn't tell the whole story. Pair it with revenue growth rate — a high P/E is more justified when a company is growing earnings 20%+ per year.</div>`
-    },
-    {
-      keys: ['compound interest','compound growth','compounding'],
-      html: `<h4>What is Compound Interest?</h4><p><strong>Compound interest</strong> means earning returns on your returns — not just on your original investment. Over decades, it creates exponential growth sometimes called "the eighth wonder of the world."</p><h4>Simple Example</h4><ul><li>Invest <strong>$10,000</strong> at 10% per year</li><li>Year 1: +$1,000 → $11,000</li><li>Year 2: +$1,100 (10% of $11,000) → $12,100</li><li>Year 10: → <strong>$25,937</strong></li><li>Year 30: → <strong>$174,494</strong> — from the same $10,000</li></ul><h4>Why Starting Early Is Everything</h4><p>Investing $200/month from age 25 vs. age 35 (at 8%/year): the age-25 investor ends up with <strong>nearly double</strong> by age 65 — despite only contributing $24,000 more.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> Set up automatic monthly investments so compounding works in the background without you having to remember. Even $50/month started today beats $500/month started in 10 years.</div>`
-    },
-    {
-      keys: ['etf','exchange traded','index fund','vti','spy'],
-      html: `<h4>What is an ETF?</h4><p>An <strong>Exchange-Traded Fund (ETF)</strong> is a basket of stocks packaged into one security you buy and sell like a single stock. One purchase can give you exposure to hundreds or thousands of companies instantly.</p><h4>Why ETFs Are Perfect for Beginners</h4><ul><li><strong>Instant diversification</strong> — VTI holds 3,600+ US companies in one ticker</li><li><strong>Ultra-low cost</strong> — Expense ratios as low as 0.03% (vs 1%+ for mutual funds)</li><li><strong>Reduced single-stock risk</strong> — if one company fails, you own hundreds of others</li><li><strong>Tax efficient</strong> — fewer capital gains distributions than mutual funds</li></ul><h4>ETF vs. Individual Stock</h4><p>Individual stocks offer higher upside but carry concentrated risk. ETFs smooth out that risk at the cost of some potential upside — making them the ideal <em>foundation</em> of a beginner portfolio.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> Many experts suggest putting 50–70% of a beginner portfolio into broad market ETFs like VTI or SPY, and using the remaining allocation for individual stock picks you've researched.</div>`
-    },
-    {
-      keys: ['dollar cost','dca','dollar-cost'],
-      html: `<h4>What is Dollar-Cost Averaging?</h4><p><strong>Dollar-cost averaging (DCA)</strong> means investing a fixed dollar amount on a regular schedule — every week or month — regardless of whether the market is up or down that day.</p><h4>How It Works</h4><ul><li>You invest <strong>$300 every month</strong> into an S&P 500 ETF</li><li>When prices are high → your $300 buys <em>fewer</em> shares</li><li>When prices drop → your $300 buys <em>more</em> shares automatically</li><li>Over time, your average cost per share smooths out the highs and lows</li></ul><h4>Why It's So Powerful</h4><p>It removes the impossible task of "timing the market." Studies consistently show that even professional fund managers can't reliably time the market — DCA sidesteps the problem entirely.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> Set up automatic recurring investments in your brokerage account so DCA happens automatically. You'll never have to decide "is now a good time to invest?" again.</div>`
-    },
-    {
-      keys: ['dividend','dividend yield','drip'],
-      html: `<h4>How Do Dividends Work?</h4><p>A <strong>dividend</strong> is a cash payment companies make to shareholders — typically every quarter — funded from company profits. If you own shares on the "record date," you receive the payment deposited directly into your brokerage account.</p><h4>Key Terms</h4><ul><li><strong>Dividend Yield</strong> — Annual payment as % of stock price. A 3% yield on a $100 stock pays $3/year per share.</li><li><strong>Ex-Dividend Date</strong> — You must own shares <em>before</em> this date to receive the next payment</li><li><strong>Payout Ratio</strong> — % of profits paid as dividends. Below 60% is generally sustainable.</li><li><strong>DRIP</strong> — Dividend Reinvestment Plan: automatically reinvests dividends to buy more shares, compounding your position</li></ul><h4>Dividend Aristocrats</h4><p>Companies like Johnson & Johnson, Coca-Cola, and Procter & Gamble have raised their dividend every single year for 25+ consecutive years — providing reliable, growing income through recessions and market crashes.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> Always enable DRIP (dividend reinvestment) in your brokerage unless you need the cash. Reinvested dividends have historically accounted for over 40% of total stock market returns over long periods.</div>`
-    },
-    {
-      keys: ['roth ira','traditional ira','ira','401k','401(k)','retirement account'],
-      html: `<h4>Roth IRA vs Traditional IRA vs 401(k)</h4><p>These are <strong>tax-advantaged retirement accounts</strong> — the government gives you special tax breaks to encourage long-term saving. Choosing the right account can save you tens of thousands of dollars over your lifetime.</p><h4>The Key Differences</h4><ul><li><strong>Roth IRA</strong> — You invest <em>after-tax</em> dollars. Growth and withdrawals in retirement are completely tax-free. Best if you expect to be in a higher tax bracket later.</li><li><strong>Traditional IRA</strong> — You invest <em>pre-tax</em> dollars (deductible). You pay taxes when you withdraw in retirement. Best if you're in a high tax bracket now.</li><li><strong>401(k)</strong> — Employer-sponsored plan with higher contribution limits ($23,000/year in 2024). Many employers match contributions — that's free money.</li></ul><h4>The General Priority Order</h4><p>1) Contribute enough to 401(k) to get full employer match → 2) Max out Roth IRA → 3) Max out 401(k) → 4) Taxable brokerage account.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> If your employer offers a 401(k) match — contribute at minimum enough to get the full match. A 50% match is an instant 50% return on your money, which beats any investment in existence.</div>`
-    },
-    {
-      keys: ['beta','volatility','stock volatility'],
-      html: `<h4>What is Beta?</h4><p><strong>Beta</strong> measures how much a stock moves relative to the overall market (S&P 500). It's a key measure of investment risk and volatility.</p><h4>How to Read Beta</h4><ul><li><strong>Beta = 1.0</strong> — Moves exactly with the market</li><li><strong>Beta > 1.0</strong> (e.g. 1.7) — More volatile than the market. If S&P drops 10%, this stock might drop 17%</li><li><strong>Beta < 1.0</strong> (e.g. 0.55) — Less volatile. Defensive stocks like utilities and consumer staples often have low betas</li><li><strong>Beta < 0</strong> — Moves opposite the market (rare; gold sometimes does this)</li></ul><h4>Beta and Portfolio Construction</h4><p>Conservative investors should seek <strong>low-beta stocks</strong>. Aggressive investors can tolerate high-beta stocks for their higher growth potential. A well-diversified portfolio typically has a blended beta near 1.0.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> If market swings keep you up at night, intentionally build a portfolio with an average beta below 0.8. You'll give up some upside, but sleep much better during corrections.</div>`
-    },
-    {
-      keys: ['market cap','market capitalization','large cap','small cap'],
-      html: `<h4>What is Market Cap?</h4><p><strong>Market capitalization</strong> is the total value of all a company's outstanding shares — calculated by multiplying share price × total shares. It tells you the overall "size" of a company in the stock market.</p><h4>The Three Tiers</h4><ul><li><strong>Large Cap ($10B+)</strong> — Apple, Microsoft, Amazon. More stable, lower risk, but slower growth potential. Good for conservative portfolios.</li><li><strong>Mid Cap ($2B–$10B)</strong> — Established companies still in growth phase. Sweet spot of stability + growth for moderate investors.</li><li><strong>Small Cap (Under $2B)</strong> — Smaller, faster-growing companies. Higher upside potential but also higher risk. Best for aggressive, long-horizon investors.</li></ul><h4>Why It Matters</h4><p>A well-diversified portfolio typically holds a mix of all three. Most beginner portfolios are wisely anchored in large-cap stocks and ETFs, with a smaller allocation to mid/small-cap for growth.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> When starting out, stick primarily to large-cap companies or broad market ETFs. As you build confidence and knowledge, you can gradually add mid and small-cap exposure.</div>`
-    },
-    {
-      keys: ['diversification','diversify','diversified'],
-      html: `<h4>What is Diversification?</h4><p><strong>Diversification</strong> means spreading your investments across different stocks, sectors, and asset types so that one bad investment doesn't destroy your entire portfolio. It's the closest thing to a free lunch in investing.</p><h4>How to Diversify</h4><ul><li><strong>Across sectors</strong> — Don't put everything in tech. Hold technology, healthcare, financials, consumer goods, etc.</li><li><strong>Across company sizes</strong> — Mix large-cap stability with mid and small-cap growth</li><li><strong>Across geographies</strong> — US + international exposure reduces country-specific risk</li><li><strong>Across asset types</strong> — Stocks + bonds + real estate (REITs) behave differently in different conditions</li></ul><h4>The Easy Way: ETFs</h4><p>Buying a single broad market ETF like VTI instantly diversifies you across 3,600+ US companies. It's the most efficient diversification available to beginners.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> A common beginner mistake is "di-worse-ification" — owning 30 similar stocks and thinking you're diversified. True diversification requires different asset types that don't all move together.</div>`
-    },
-    {
-      keys: ['start invest','how to start','begin invest','first investment','500','1000','beginner invest'],
-      html: `<h4>How to Start Investing as a Beginner</h4><p>Starting to invest is simpler than most people think. You don't need a lot of money or expertise — you just need a plan and to take the first step.</p><h4>Step-by-Step Guide</h4><ul><li><strong>Step 1: Build an emergency fund first</strong> — 3–6 months of expenses in a high-yield savings account before investing anything</li><li><strong>Step 2: Open a brokerage account</strong> — Fidelity, Charles Schwab, or Vanguard for long-term investors. No minimums, no account fees.</li><li><strong>Step 3: Start with a Roth IRA</strong> — If you're under the income limit, contribute here first for tax-free growth</li><li><strong>Step 4: Buy a broad market ETF</strong> — VTI or SPY as your core holding. One purchase, instant diversification.</li><li><strong>Step 5: Set up automatic monthly contributions</strong> — Dollar-cost averaging removes emotion from investing</li></ul><h4>With $500 specifically</h4><p>Open a Roth IRA, buy 1–2 shares of VTI, and set up a $50–$100/month automatic contribution. That's genuinely all you need to do.</p><div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> The single biggest investing mistake is waiting until you "know enough" or have "enough money." $100 invested today at age 22 is worth more than $1,000 invested at age 32. Start small and start now.</div>`
-    },
-  ];
-  for (const entry of kb) {
-    if (entry.keys.some(k => ql.includes(k))) return entry.html;
-  }
-  // Generic fallback
-  return `<h4>Your Question: "${q}"</h4>
-<p>Great question! Here's what every beginner investor should understand about this topic:</p>
-<p>The field of personal investing covers a huge range of concepts — from basic account types and tax strategies to individual stock analysis and portfolio construction. The best approach is always to:</p>
-<ul>
-  <li><strong>Start with the fundamentals</strong> — understand compound interest, diversification, and risk tolerance before picking individual stocks</li>
-  <li><strong>Use tax-advantaged accounts first</strong> — Roth IRA and 401(k) contributions grow tax-free or tax-deferred</li>
-  <li><strong>Invest consistently</strong> — regular monthly contributions matter more than perfect timing</li>
-  <li><strong>Think long-term</strong> — short-term market swings are noise; 10+ year returns are what matter</li>
-</ul>
-<p style="margin-top:10px">For a detailed answer to your specific question, try rephrasing it with more specifics — for example: "What is a P/E ratio?" or "How do dividends work?" or "What is the difference between a Roth IRA and 401k?"</p>
-<div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px"><strong>💡 Beginner Tip:</strong> Browse the topic categories below or click any term in the glossary for instant deep-dive explanations on all core investing concepts.</div>`;
-}
 
-/* ════════════════════════════════════
-   BACKEND API CONNECTION
-════════════════════════════════════ */
-const API_URL = 'https://YOUR_BACKEND_URL'; // ← replace after deploying backend
-// For local testing use: 'http://localhost:3001'
-
-let authToken = localStorage.getItem('swp_token') || null;
-let currentUser = JSON.parse(localStorage.getItem('swp_user') || 'null');
-
-async function apiCall(method, path, body = null, requiresAuth = false) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (requiresAuth && authToken) headers['Authorization'] = `Bearer ${authToken}`;
-  const opts = { method, headers };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(API_URL + path, opts);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
-}
-
-function saveAuth(token, user) {
-  authToken   = token;
-  currentUser = user;
-  localStorage.setItem('swp_token', token);
-  localStorage.setItem('swp_user', JSON.stringify(user));
-  updateNavForUser(user);
-  if (user.tier === 'pro' && user.subscription_status === 'active') {
-    userTier = 'pro';
-    renderResults();
-  }
-}
-
-function clearAuth() {
-  authToken   = null;
-  currentUser = null;
-  userTier    = 'free';
-  localStorage.removeItem('swp_token');
-  localStorage.removeItem('swp_user');
-  updateNavForUser(null);
-}
-
-function updateNavForUser(user) {
-  const links = document.getElementById('navAuthLinks');
-  if (!links) return;
-  if (user) {
-    const isPro = user.tier === 'pro';
-    links.innerHTML = `
-      <span style="font-size:13px;color:var(--gray600);font-weight:500">${user.full_name.split(' ')[0]}</span>
-      ${isPro ? '<span style="background:var(--g100);color:var(--g700);font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.05em">PRO</span>' : ''}
-      <a onclick="openM('account')" style="font-size:13px">Account</a>
-      <a onclick="logOut()" style="font-size:13px;color:var(--gray500)">Sign Out</a>`;
-  } else {
-    links.innerHTML = `
-      <a onclick="openM('login')" style="font-size:14px">Sign In</a>
-      <a onclick="openM('register')" class="nav-cta" style="font-size:14px">Get Started Free</a>`;
-  }
-}
-
-function logOut() {
-  clearAuth();
-  showToast('Signed out successfully');
-}
-
-// ── Check URL params on load (Stripe redirect back) ──────────────
-function checkUrlParams() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('upgraded') === 'true') {
-    showToast('Pro access activated — welcome to StockWise Pro!');
-    // Refresh user data from backend
-    if (authToken) {
-      apiCall('GET', '/auth/me', null, true)
-        .then(d => { saveAuth(authToken, d.user); })
-        .catch(() => {});
-    }
-    history.replaceState({}, '', window.location.pathname);
-  }
-  if (params.get('verified') === 'true') {
-    showToast('Email verified — your account is fully activated!');
-    history.replaceState({}, '', window.location.pathname);
-  }
-  if (params.get('upgrade_canceled') === 'true') {
-    showToast('Upgrade canceled — you can upgrade anytime.');
-    history.replaceState({}, '', window.location.pathname);
-  }
-}
-
-// ── Restore session on page load ─────────────────────────────────
-if (currentUser && authToken) {
-  // Validate token in background
-  apiCall('GET', '/auth/me', null, true)
-    .then(d => {
-      currentUser = d.user;
-      localStorage.setItem('swp_user', JSON.stringify(d.user));
-      updateNavForUser(d.user);
-      if (d.user.tier === 'pro') { userTier = 'pro'; renderResults(); }
-    })
-    .catch(() => clearAuth()); // Token expired — log out
-}
-
-/* ════════════════════════════════════
-   PAGE ROUTING
-════════════════════════════════════ */
-function goPage(name) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.querySelectorAll('.nav-links a[id^=nav]').forEach(a=>a.classList.remove('nav-active'));
-  const na=document.getElementById('nav-'+name); if(na)na.classList.add('nav-active');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function scrollQuiz(){goPage('home');setTimeout(()=>{document.getElementById('get-started')?.scrollIntoView({behavior:'smooth',block:'start'});},100);}
-function scrollPrice(){goPage('home');setTimeout(()=>{document.getElementById('pricing')?.scrollIntoView({behavior:'smooth',block:'start'});},100);}
-
-/* ════════════════════════════════════
-   MODAL — Auth + Stripe + Info
-════════════════════════════════════ */
-function openM(type){
-  const c=document.getElementById('mContent');
-
-  if (type === 'login') {
-    c.innerHTML = `
-      <h3>Sign In to StockWise Pro</h3>
-      <p>Welcome back. Sign in to access your portfolio.</p>
-      <div class="mform" id="loginForm">
-        <input type="email" id="li-email" placeholder="Email Address" autocomplete="email">
-        <input type="password" id="li-pass" placeholder="Password" autocomplete="current-password">
-        <div id="loginError" style="display:none;background:#fee2e2;color:#dc2626;font-size:12px;padding:10px 12px;border-radius:8px;font-weight:500"></div>
-        <button class="btn-modal" onclick="doLogin()">Sign In</button>
-        <p style="font-size:12px;color:var(--gray400);text-align:center;margin-top:4px">
-          <a onclick="openM('forgot')" style="color:var(--g600);cursor:pointer;text-decoration:underline">Forgot password?</a>
-          &nbsp;&middot;&nbsp;
-          <a onclick="openM('register')" style="color:var(--g600);cursor:pointer;text-decoration:underline">Create account</a>
-        </p>
-      </div>`;
-
-  } else if (type === 'register') {
-    c.innerHTML = `
-      <h3>Create Your Free Account</h3>
-      <p>Join StockWise Pro and get your personalized portfolio in minutes.</p>
-      <div class="mform" id="regForm">
-        <input type="text" id="rg-name" placeholder="Full Name" autocomplete="name">
-        <input type="email" id="rg-email" placeholder="Email Address" autocomplete="email">
-        <input type="password" id="rg-pass" placeholder="Password (min. 8 characters)" autocomplete="new-password">
-        <div id="regError" style="display:none;background:#fee2e2;color:#dc2626;font-size:12px;padding:10px 12px;border-radius:8px;font-weight:500"></div>
-        <button class="btn-modal" onclick="doRegister()">Create Free Account</button>
-        <p style="font-size:11px;color:var(--gray400);text-align:center;margin-top:4px">
-          Already have an account? <a onclick="openM('login')" style="color:var(--g600);cursor:pointer;text-decoration:underline">Sign in</a>
-        </p>
-        <p style="font-size:10px;color:var(--gray300);text-align:center">By creating an account you agree to our <a onclick="openM('terms')" style="color:var(--gray400);cursor:pointer;text-decoration:underline">Terms</a> and <a onclick="openM('privacy')" style="color:var(--gray400);cursor:pointer;text-decoration:underline">Privacy Policy</a></p>
-      </div>`;
-
-  } else if (type === 'upgrade') {
-    if (!currentUser) {
-      // Not logged in — ask them to create account first
-      c.innerHTML = `
-        <h3>Create an Account to Upgrade</h3>
-        <p>You need a free account before upgrading to Pro. It only takes 30 seconds.</p>
-        <button class="btn-modal" onclick="openM('register')">Create Free Account First</button>
-        <p style="font-size:12px;color:var(--gray400);text-align:center;margin-top:10px">Already have an account? <a onclick="openM('login')" style="color:var(--g600);cursor:pointer;text-decoration:underline">Sign in</a></p>`;
-    } else {
-      c.innerHTML = `
-        <h3>Upgrade to Pro</h3>
-        <p>Start your 7-day free trial. No charge until the trial ends. Cancel anytime from your account.</p>
-        <div style="background:var(--g50);border-radius:12px;padding:14px 16px;margin-bottom:20px;display:flex;flex-direction:column;gap:6px">
-          <div style="font-size:12px;font-weight:700;color:var(--g800);margin-bottom:4px">What you unlock immediately:</div>
-          <div style="font-size:12px;color:var(--gray600);display:flex;align-items:center;gap:6px"><span style="color:var(--g600);font-weight:700">✓</span> All 12 personalized stock picks</div>
-          <div style="font-size:12px;color:var(--gray600);display:flex;align-items:center;gap:6px"><span style="color:var(--g600);font-weight:700">✓</span> Analyst consensus ratings &amp; 12-month price targets</div>
-          <div style="font-size:12px;color:var(--gray600);display:flex;align-items:center;gap:6px"><span style="color:var(--g600);font-weight:700">✓</span> Breaking news alerts per holding</div>
-          <div style="font-size:12px;color:var(--gray600);display:flex;align-items:center;gap:6px"><span style="color:var(--g600);font-weight:700">✓</span> Portfolio tracker &amp; watchlist</div>
-          <div style="font-size:12px;color:var(--gray600);display:flex;align-items:center;gap:6px"><span style="color:var(--g600);font-weight:700">✓</span> Monthly rebalancing suggestions</div>
-          <div style="font-size:12px;color:var(--gray600);display:flex;align-items:center;gap:6px"><span style="color:var(--g600);font-weight:700">✓</span> Earnings &amp; dividend calendar</div>
-        </div>
-        <button class="btn-modal" id="stripeBtn" onclick="startStripeCheckout()">Continue to Payment — $9/mo after trial</button>
-        <p style="font-size:11px;color:var(--gray400);text-align:center;margin-top:6px">Secured by Stripe &middot; 256-bit SSL &middot; Cancel anytime</p>`;
-    }
-
-  } else if (type === 'account') {
-    const u = currentUser;
-    const isPro = u && u.tier === 'pro';
-    c.innerHTML = `
-      <h3>Your Account</h3>
-      <div style="background:var(--g50);border-radius:12px;padding:16px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--g900)">${u?.full_name || '—'}</div>
-        <div style="font-size:12px;color:var(--gray500);margin-top:2px">${u?.email || '—'}</div>
-        <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;${isPro ? 'background:#dcfce7;color:#166534' : 'background:#f3f4f6;color:#6b7280'}">${isPro ? 'PRO' : 'FREE'}</span>
-          ${isPro ? `<span style="font-size:11px;color:var(--gray500)">Active subscription</span>` : `<a onclick="openM('upgrade')" style="font-size:11px;color:var(--g600);cursor:pointer;font-weight:700">Upgrade to Pro →</a>`}
+  if (ql.includes('p/e') || ql.includes('price to earnings') || ql.includes('price-to-earnings')) {
+    return `
+      <div class="aa-body">
+        <h4>What is a P/E ratio?</h4>
+        <p><strong>P/E</strong> means <strong>price-to-earnings ratio</strong>. It tells you how much investors are paying for each $1 of a company’s profit.</p>
+        <h4>Simple way to think about it</h4>
+        <ul>
+          <li>Lower P/E can mean cheaper valuation</li>
+          <li>Higher P/E can mean investors expect faster growth</li>
+          <li>You should compare P/E mostly within the same industry</li>
+        </ul>
+        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+          <strong>💡 Beginner Tip:</strong> Never judge a stock using only P/E. Pair it with revenue growth, margins, and debt.
         </div>
       </div>
-      ${isPro ? `<button class="btn-modal" style="background:white;color:var(--gray700);border:1.5px solid var(--gray200);margin-bottom:10px" onclick="openBillingPortal()">Manage Subscription / Cancel</button>` : ''}
-      <button class="btn-modal" style="background:white;color:var(--red);border:1.5px solid #fee2e2" onclick="logOut();closeM()">Sign Out</button>`;
-
-  } else if (type === 'forgot') {
-    c.innerHTML = `
-      <h3>Reset Your Password</h3>
-      <p>Enter your email and we'll send you a reset link.</p>
-      <div class="mform">
-        <input type="email" id="fp-email" placeholder="Email Address">
-        <div id="fpMsg" style="display:none;font-size:13px;padding:10px 12px;border-radius:8px"></div>
-        <button class="btn-modal" onclick="doForgotPassword()">Send Reset Link</button>
-        <p style="font-size:12px;color:var(--gray400);text-align:center;margin-top:4px"><a onclick="openM('login')" style="color:var(--g600);cursor:pointer;text-decoration:underline">Back to sign in</a></p>
-      </div>`;
-
-  } else if(type==='about'){
-    c.innerHTML=`<h3>About StockWise Pro</h3><p>StockWise Pro was built with a single mission: make professional-grade investment intelligence accessible to every beginner investor — not just the wealthy few.</p><p style="margin-top:10px;font-size:14px;color:var(--gray600);line-height:1.7">Our platform combines real-time market data, Wall Street analyst consensus aggregated from 30+ major firms, and an AI-powered risk profiling engine to deliver truly personalized recommendations tailored to your exact financial situation and goals.</p>`;
-  } else if(type==='privacy'){
-    c.innerHTML=`<h3>Privacy Policy</h3><p style="font-size:13px;color:var(--gray600);line-height:1.85">StockWise Pro collects only the information you provide to generate your portfolio. We never sell or share your personal data. All data is encrypted at rest and in transit with AES-256 and TLS 1.3. You may request deletion at any time by emailing hello@stockwisepro.com.</p>`;
-  } else if(type==='terms'){
-    c.innerHTML=`<h3>Terms of Service</h3><p style="font-size:13px;color:var(--gray600);line-height:1.85">By using StockWise Pro, you acknowledge all information is for educational purposes only and does not constitute financial advice. StockWise Pro is not a registered investment advisor or broker-dealer. All investment decisions are made at your own risk. Past performance does not guarantee future results.</p>`;
-  } else if(type.startsWith('det_')){
-    const sym=type.replace('det_','');const s=DB[sym];
-    if(s)c.innerHTML=`<h3>${sym} — Full Analysis</h3><p>${s.desc}</p><div style="background:var(--g50);border-radius:12px;padding:16px;margin-top:14px"><div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:7px">Pro Feature</div><p style="font-size:13px;color:var(--gray600);line-height:1.65">Upgrade to unlock: DCF valuation model, insider trading activity, institutional ownership %, short interest data, earnings surprise history, and full analyst report PDFs.</p></div><button class="btn-modal" style="margin-top:14px" onclick="closeM();openM('upgrade')">Unlock Full Analysis →</button>`;
+    `;
   }
 
-  document.getElementById('modal').classList.add('open');
+  if (ql.includes('etf')) {
+    return `
+      <div class="aa-body">
+        <h4>What is an ETF?</h4>
+        <p>An <strong>ETF</strong> is a basket of stocks you can buy in one trade. It gives you instant diversification.</p>
+        <ul>
+          <li>Good for beginners</li>
+          <li>Usually low cost</li>
+          <li>Helps reduce single-stock risk</li>
+        </ul>
+        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+          <strong>💡 Beginner Tip:</strong> Broad market ETFs like VTI or VOO are often the easiest place to start.
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="aa-body">
+      <h4>${escapeHtml(q)}</h4>
+      <p>This topic is part of core investing education. A good beginner framework is:</p>
+      <ul>
+        <li>Understand the concept in plain English</li>
+        <li>Learn how it affects risk and return</li>
+        <li>See how it fits into a portfolio, not just one stock</li>
+      </ul>
+      <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+        <strong>💡 Beginner Tip:</strong> Ask narrower questions like “What is beta?” or “How do dividends work?” for better explanations.
+      </div>
+    </div>
+  `;
 }
 
-// ─── Auth actions ─────────────────────────────────────────────────
-async function doRegister() {
-  const name  = document.getElementById('rg-name')?.value.trim();
-  const email = document.getElementById('rg-email')?.value.trim();
-  const pass  = document.getElementById('rg-pass')?.value;
-  const errEl = document.getElementById('regError');
-
-  if (!name || !email || !pass) {
-    errEl.textContent = 'Please fill in all fields.';
-    errEl.style.display = 'block'; return;
+function askAI() {
+  const input = document.getElementById('aiInput');
+  const question = input?.value.trim();
+  if (!question) {
+    showToast('Please type a question first');
+    return;
   }
 
-  const btn = document.querySelector('#regForm .btn-modal');
-  btn.textContent = 'Creating account…'; btn.disabled = true;
-
-  try {
-    const data = await apiCall('POST', '/auth/register', { email, password: pass, full_name: name });
-    saveAuth(data.token, data.user);
-    closeM();
-    showToast('Account created! Check your email to verify.');
-  } catch (err) {
-    errEl.textContent = err.message;
-    errEl.style.display = 'block';
-    btn.textContent = 'Create Free Account'; btn.disabled = false;
-  }
-}
-
-async function doLogin() {
-  const email = document.getElementById('li-email')?.value.trim();
-  const pass  = document.getElementById('li-pass')?.value;
-  const errEl = document.getElementById('loginError');
-
-  if (!email || !pass) {
-    errEl.textContent = 'Please enter your email and password.';
-    errEl.style.display = 'block'; return;
+  const askBtn = document.getElementById('askBtn');
+  if (askBtn) {
+    askBtn.classList.add('ai-asking');
+    askBtn.disabled = true;
   }
 
-  const btn = document.querySelector('#loginForm .btn-modal');
-  btn.textContent = 'Signing in…'; btn.disabled = true;
+  const wrap = document.getElementById('aiAnswerWrap');
+  const questionEl = document.getElementById('aaQuestion');
+  const contentEl = document.getElementById('aaContent');
 
-  try {
-    const data = await apiCall('POST', '/auth/login', { email, password: pass });
-    saveAuth(data.token, data.user);
-    closeM();
-    showToast(`Welcome back, ${data.user.full_name.split(' ')[0]}!`);
-  } catch (err) {
-    errEl.textContent = err.message;
-    errEl.style.display = 'block';
-    btn.textContent = 'Sign In'; btn.disabled = false;
-  }
-}
+  if (questionEl) questionEl.textContent = question;
+  if (wrap) wrap.style.display = 'block';
+  if (contentEl) contentEl.innerHTML = `<div class="aa-loading">Thinking…</div>`;
 
-async function doForgotPassword() {
-  const email = document.getElementById('fp-email')?.value.trim();
-  const msgEl = document.getElementById('fpMsg');
-  if (!email) { msgEl.textContent = 'Please enter your email.'; msgEl.style.cssText = 'display:block;background:#fee2e2;color:#dc2626;font-size:13px;padding:10px 12px;border-radius:8px'; return; }
-
-  const btn = document.querySelector('.mform .btn-modal');
-  btn.textContent = 'Sending…'; btn.disabled = true;
-
-  try {
-    await apiCall('POST', '/auth/forgot-password', { email });
-    msgEl.textContent = 'Reset link sent — check your inbox.';
-    msgEl.style.cssText = 'display:block;background:#dcfce7;color:#166534;font-size:13px;padding:10px 12px;border-radius:8px';
-    btn.style.display = 'none';
-  } catch {
-    msgEl.textContent = 'Failed to send — please try again.';
-    msgEl.style.cssText = 'display:block;background:#fee2e2;color:#dc2626;font-size:13px;padding:10px 12px;border-radius:8px';
-    btn.textContent = 'Send Reset Link'; btn.disabled = false;
-  }
-}
-
-// ─── Stripe actions ───────────────────────────────────────────────
-async function startStripeCheckout() {
-  const btn = document.getElementById('stripeBtn');
-  if (btn) { btn.textContent = 'Redirecting to payment…'; btn.disabled = true; }
-
-  try {
-    const data = await apiCall('POST', '/stripe/create-checkout', {}, true);
-    if (data.already_subscribed) {
-      closeM(); showToast('You already have an active Pro subscription!');
-      return;
+  setTimeout(() => {
+    if (contentEl) contentEl.innerHTML = getLocalAnswer(question);
+    if (askBtn) {
+      askBtn.classList.remove('ai-asking');
+      askBtn.disabled = false;
     }
-    // Redirect to Stripe Checkout
-    window.location.href = data.url;
-  } catch (err) {
-    showToast('Failed to open checkout — please try again');
-    if (btn) { btn.textContent = 'Continue to Payment — $9/mo after trial'; btn.disabled = false; }
-  }
+  }, 350);
 }
 
-async function openBillingPortal() {
-  closeM();
-  showToast('Opening billing portal…');
-  try {
-    const data = await apiCall('POST', '/stripe/create-portal', {}, true);
-    window.location.href = data.url;
-  } catch {
-    showToast('Failed to open billing portal — please try again');
-  }
-}
-
-function signup() { closeM(); unlockPro(); } // fallback for demo mode
-function closeM(){document.getElementById('modal').classList.remove('open');}
-function closeMOut(e){if(e.target===document.getElementById('modal'))closeM();}
-
-function showToast(msg){
-  document.getElementById('toastMsg').textContent=msg;
-  const t=document.getElementById('toast');
-  t.classList.add('show');clearTimeout(t._t);
-  t._t=setTimeout(()=>t.classList.remove('show'),3200);
-}
-
-/* ════════════════════════════════════
-   INIT — fire data fetch immediately,
-   not waiting for DOM or user action
-════════════════════════════════════ */
-
-// Start fetching the moment this script executes (before DOMContentLoaded)
+/* -----------------------------
+   INIT
+----------------------------- */
 refreshAllData();
 
 document.addEventListener('DOMContentLoaded', () => {
   buildDots();
-  checkUrlParams();
-  updateNavForUser(currentUser);
-  // Re-render any cached data now that DOM is ready
+
   if (Object.keys(Q).length > 0) {
     renderTicker();
     renderHeroStocks();
     renderMarketBar();
   }
-  // Refresh every 60 seconds
+
   setInterval(refreshAllData, 60 * 1000);
 });
 </script>
