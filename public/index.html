@@ -1005,15 +1005,6 @@ footer{background:var(--g950);padding:56px 32px 34px;border-top:1px solid rgba(2
 <div class="toast" id="toast"><span id="toastMsg"></span></div>
 
 <script>
-<script>
-/* =========================================================
-   STOCKWISE PRO — CLEAN SCRIPT BLOCK
-   Replaces your entire old script block
-========================================================= */
-
-/* -----------------------------
-   STATE
------------------------------ */
 let curStep = 1;
 const TOTAL = 6;
 const LABELS = [
@@ -1029,49 +1020,13 @@ let userTier = 'free';
 let lastPicks = [];
 let Q = {};
 
-const TICK_SYMS  = ['AAPL','MSFT','NVDA','AMZN','GOOGL','TSLA','META','JPM','V','NFLX','SPY','QQQ'];
-const HERO_SYMS  = ['AAPL','MSFT','NVDA','AMZN'];
+const TICK_SYMS = ['AAPL','MSFT','NVDA','AMZN','GOOGL','META','TSLA','NFLX','JPM','V'];
+const HERO_SYMS = ['AAPL','MSFT','NVDA','AMZN'];
 const INDEX_SYMS = ['^GSPC','^IXIC','^DJI','^VIX','^TNX'];
-
-const CACHE_KEY = 'swp_quotes_v2';
+const CACHE_KEY = 'swp_quotes_v3';
 const CACHE_TTL = 60 * 1000;
 
-/* -----------------------------
-   SIMPLE MODAL CONTENT
------------------------------ */
-const MODAL_CONTENT = {
-  about: `
-    <h3>About StockWise Pro</h3>
-    <p>StockWise Pro helps beginner investors get personalized stock ideas, learn investing basics, and understand live market data in plain English.</p>
-  `,
-  privacy: `
-    <h3>Privacy Policy</h3>
-    <p>Your quiz answers are used only to generate your recommendations. Do not enter sensitive personal information you would not want stored.</p>
-  `,
-  terms: `
-    <h3>Terms of Service</h3>
-    <p>StockWise Pro is for educational and informational purposes only. It is not investment advice, legal advice, or tax advice.</p>
-  `,
-  login: `
-    <h3>Sign In</h3>
-    <p>This demo version does not have full account auth connected yet.</p>
-    <button class="btn-modal" onclick="closeM()">Close</button>
-  `,
-  register: `
-    <h3>Create Free Account</h3>
-    <p>This demo version does not have full account auth connected yet.</p>
-    <button class="btn-modal" onclick="closeM()">Close</button>
-  `,
-  upgrade: `
-    <h3>Upgrade to Pro</h3>
-    <p>Upgrade unlocks all recommendations, analyst targets, news, and future portfolio tools.</p>
-    <button class="btn-modal" onclick="unlockPro(); closeM()">Unlock Demo Pro</button>
-  `
-};
-
-/* -----------------------------
-   UTILITIES
------------------------------ */
+/* ---------------- helpers ---------------- */
 function fmt(n, d = 2) {
   return n != null && !Number.isNaN(Number(n)) ? Number(n).toFixed(d) : '—';
 }
@@ -1088,8 +1043,7 @@ function fmtPct(v) {
 
 function fmtDate(unixSeconds) {
   if (!unixSeconds) return '';
-  const d = new Date(unixSeconds * 1000);
-  return d.toLocaleDateString();
+  return new Date(unixSeconds * 1000).toLocaleDateString();
 }
 
 function escapeHtml(str) {
@@ -1102,18 +1056,16 @@ function escapeHtml(str) {
 }
 
 function showToast(msg) {
-  const toast = document.getElementById('toast');
-  const toastMsg = document.getElementById('toastMsg');
-  if (!toast || !toastMsg) return;
-  toastMsg.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => toast.classList.remove('show'), 3200);
+  const t = document.getElementById('toast');
+  const m = document.getElementById('toastMsg');
+  if (!t || !m) return;
+  m.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3200);
 }
 
-/* -----------------------------
-   PAGE ROUTING / NAV
------------------------------ */
+/* ---------------- routing ---------------- */
 function goPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name)?.classList.add('active');
@@ -1138,9 +1090,7 @@ function scrollPrice() {
   }, 120);
 }
 
-/* -----------------------------
-   STEP WIZARD
------------------------------ */
+/* ---------------- step wizard ---------------- */
 function buildDots() {
   const dots = document.getElementById('stepDots');
   if (!dots) return;
@@ -1167,13 +1117,8 @@ function showStep(n) {
   updateDots();
 }
 
-function nextS(f) {
-  if (f < TOTAL) showStep(f + 1);
-}
-
-function prevS(f) {
-  if (f > 1) showStep(f - 1);
-}
+function nextS(f) { if (f < TOTAL) showStep(f + 1); }
+function prevS(f) { if (f > 1) showStep(f - 1); }
 
 function sel(id, val, el) {
   const input = document.getElementById(id);
@@ -1183,9 +1128,7 @@ function sel(id, val, el) {
   el.classList.add('sel');
 }
 
-function tc(el) {
-  el.classList.toggle('sel');
-}
+function tc(el) { el.classList.toggle('sel'); }
 
 function yn(id, val, el) {
   const input = document.getElementById(id);
@@ -1195,9 +1138,37 @@ function yn(id, val, el) {
   el.classList.add(val === 'yes' ? 'sy' : 'sn');
 }
 
-/* -----------------------------
-   MODAL
------------------------------ */
+/* ---------------- modal ---------------- */
+const MODAL_CONTENT = {
+  about: `
+    <h3>About StockWise Pro</h3>
+    <p>StockWise Pro helps beginner investors get personalized stock ideas and understand markets in plain English.</p>
+  `,
+  privacy: `
+    <h3>Privacy Policy</h3>
+    <p>Your quiz responses are used only to generate your recommendations.</p>
+  `,
+  terms: `
+    <h3>Terms of Service</h3>
+    <p>StockWise Pro is for educational use only and is not financial advice.</p>
+  `,
+  login: `
+    <h3>Sign In</h3>
+    <p>Account login is not connected in this version yet.</p>
+    <button class="btn-modal" onclick="closeM()">Close</button>
+  `,
+  register: `
+    <h3>Create Account</h3>
+    <p>Account signup is not connected in this version yet.</p>
+    <button class="btn-modal" onclick="closeM()">Close</button>
+  `,
+  upgrade: `
+    <h3>Upgrade to Pro</h3>
+    <p>Pro unlocks full recommendations, targets, and news.</p>
+    <button class="btn-modal" onclick="unlockPro(); closeM()">Unlock Demo Pro</button>
+  `
+};
+
 function openM(type) {
   const modal = document.getElementById('modal');
   const content = document.getElementById('mContent');
@@ -1207,7 +1178,7 @@ function openM(type) {
     const sym = type.replace('det_', '');
     content.innerHTML = `
       <h3>${escapeHtml(sym)} — Full Analysis</h3>
-      <p>Detailed analysis is coming next. This demo currently shows live prices, analyst targets, and recent news.</p>
+      <p>Detailed analysis is coming next.</p>
       <button class="btn-modal" onclick="closeM()">Close</button>
     `;
   } else {
@@ -1221,23 +1192,11 @@ function openM(type) {
   modal.classList.add('open');
 }
 
-function closeM() {
-  document.getElementById('modal')?.classList.remove('open');
-}
+function closeM() { document.getElementById('modal')?.classList.remove('open'); }
+function closeMOut(e) { if (e.target === document.getElementById('modal')) closeM(); }
+function unlockPro() { userTier = 'pro'; renderResults(); showToast('Pro access activated'); }
 
-function closeMOut(e) {
-  if (e.target === document.getElementById('modal')) closeM();
-}
-
-function unlockPro() {
-  userTier = 'pro';
-  renderResults();
-  showToast('Pro access activated');
-}
-
-/* -----------------------------
-   LIVE MARKET DATA
------------------------------ */
+/* ---------------- live market data ---------------- */
 (function restoreCache() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -1253,20 +1212,14 @@ function chgInfo(q) {
     return { pct: null, up: true, txt: '—' };
   }
   const p = ((q.price - q.prev) / q.prev) * 100;
-  return {
-    pct: p,
-    up: p >= 0,
-    txt: `${p >= 0 ? '▲' : '▼'} ${Math.abs(p).toFixed(2)}%`
-  };
+  return { pct: p, up: p >= 0, txt: `${p >= 0 ? '▲' : '▼'} ${Math.abs(p).toFixed(2)}%` };
 }
 
 function normalizeYahooMeta(meta) {
   if (!meta || !meta.regularMarketPrice) return null;
   return {
     price: meta.regularMarketPrice,
-    prev: meta.chartPreviousClose || meta.previousClose || meta.regularMarketPrice,
-    hi52: meta.fiftyTwoWeekHigh,
-    lo52: meta.fiftyTwoWeekLow
+    prev: meta.chartPreviousClose || meta.previousClose || meta.regularMarketPrice
   };
 }
 
@@ -1278,13 +1231,11 @@ async function yFetch(sym) {
     const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
     const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(7000) });
     const data = await res.json();
-    const meta = data?.chart?.result?.[0]?.meta;
-    return normalizeYahooMeta(meta);
+    return normalizeYahooMeta(data?.chart?.result?.[0]?.meta);
   }
 
   try {
-    const result = await Promise.any([tryUrl(u1), tryUrl(u2)]);
-    return result;
+    return await Promise.any([tryUrl(u1), tryUrl(u2)]);
   } catch {
     return null;
   }
@@ -1295,11 +1246,9 @@ async function fetchOne(sym) {
   if (!q) return;
   Q[sym] = q;
   Q[sym.replace(/[^A-Za-z0-9]/g, '')] = q;
-
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: Q }));
   } catch {}
-
   renderTicker();
   renderHeroStocks();
   renderMarketBar();
@@ -1307,13 +1256,11 @@ async function fetchOne(sym) {
 
 function refreshAllData() {
   const allSyms = [...new Set([...TICK_SYMS, ...HERO_SYMS, ...INDEX_SYMS])];
-
   if (Object.keys(Q).length > 0) {
     renderTicker();
     renderHeroStocks();
     renderMarketBar();
   }
-
   allSyms.forEach(sym => fetchOne(sym));
 }
 
@@ -1372,10 +1319,10 @@ function renderHeroStocks() {
     return `
       <div class="hstock">
         <div class="hsl">
-          <div class="hsi" style="background:${colors[sym] || 'linear-gradient(135deg,#16a34a,#4ade80)'}">${sym.slice(0,3)}</div>
+          <div class="hsi" style="background:${colors[sym]}">${sym.slice(0,3)}</div>
           <div>
             <div class="hs-sym">${sym}</div>
-            <div class="hs-nm">${names[sym] || sym}</div>
+            <div class="hs-nm">${names[sym]}</div>
           </div>
         </div>
         <div>
@@ -1413,20 +1360,18 @@ function renderMarketBar() {
 
     const c = chgInfo(q);
     const wrapper = target.parentElement;
+    const label = wrapper?.querySelector('.mb-label')?.textContent || '';
     if (!wrapper) return;
 
-    const isTNX = sym === '^TNX';
     wrapper.innerHTML = `
-      <span class="mb-label">${wrapper.querySelector('.mb-label')?.textContent || ''}</span>
-      <span class="mb-val">${isTNX ? fmt(q.price) + '%' : fmt(q.price)}</span>
+      <span class="mb-label">${label}</span>
+      <span class="mb-val">${sym === '^TNX' ? fmt(q.price) + '%' : fmt(q.price)}</span>
       <span class="mb-chg ${c.up ? 'mb-up' : 'mb-dn'}">${c.txt}</span>
     `;
   });
 }
 
-/* -----------------------------
-   ALLOCATION
------------------------------ */
+/* ---------------- allocation ---------------- */
 function getAlloc(risk) {
   return {
     conservative: [
@@ -1450,9 +1395,7 @@ function getAlloc(risk) {
   }[risk] || [];
 }
 
-/* -----------------------------
-   RESULTS CARDS
------------------------------ */
+/* ---------------- results cards ---------------- */
 function buildNewsHtml(newsItems, tier = 'free') {
   const visible = tier === 'pro' ? newsItems.slice(0, 3) : newsItems.slice(0, 2);
 
@@ -1584,9 +1527,7 @@ function renderResults() {
   }, 100);
 }
 
-/* -----------------------------
-   QUIZ ANALYZE
------------------------------ */
+/* ---------------- analyze quiz ---------------- */
 async function analyze() {
   const age = parseInt(document.getElementById('q-age')?.value);
   const risk = document.getElementById('q-risk')?.value;
@@ -1634,7 +1575,6 @@ async function analyze() {
     });
 
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.error || 'Request failed');
 
     lastPicks = (data.recommendations || []).map(s => ({
@@ -1688,9 +1628,7 @@ async function analyze() {
   }
 }
 
-/* -----------------------------
-   LEARNING CENTER
------------------------------ */
+/* ---------------- learning center ---------------- */
 function quickAsk(el) {
   const raw = el.querySelector('.gc-term')
     ? el.querySelector('.gc-term').childNodes[0].textContent.trim()
@@ -1705,20 +1643,16 @@ function quickAsk(el) {
 function getLocalAnswer(q) {
   const ql = q.toLowerCase();
 
-  if (ql.includes('p/e') || ql.includes('price to earnings') || ql.includes('price-to-earnings')) {
+  if (ql.includes('p/e')) {
     return `
       <div class="aa-body">
         <h4>What is a P/E ratio?</h4>
-        <p><strong>P/E</strong> means <strong>price-to-earnings ratio</strong>. It tells you how much investors are paying for each $1 of a company’s profit.</p>
-        <h4>Simple way to think about it</h4>
+        <p><strong>P/E</strong> means <strong>price-to-earnings ratio</strong>. It tells you how much investors are paying for each $1 of company profit.</p>
         <ul>
-          <li>Lower P/E can mean cheaper valuation</li>
-          <li>Higher P/E can mean investors expect faster growth</li>
-          <li>You should compare P/E mostly within the same industry</li>
+          <li>Lower P/E can suggest cheaper valuation</li>
+          <li>Higher P/E often means higher growth expectations</li>
+          <li>Best compared within the same industry</li>
         </ul>
-        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
-          <strong>💡 Beginner Tip:</strong> Never judge a stock using only P/E. Pair it with revenue growth, margins, and debt.
-        </div>
       </div>
     `;
   }
@@ -1727,15 +1661,12 @@ function getLocalAnswer(q) {
     return `
       <div class="aa-body">
         <h4>What is an ETF?</h4>
-        <p>An <strong>ETF</strong> is a basket of stocks you can buy in one trade. It gives you instant diversification.</p>
+        <p>An <strong>ETF</strong> is a basket of stocks you buy in one trade. It gives you instant diversification.</p>
         <ul>
           <li>Good for beginners</li>
           <li>Usually low cost</li>
           <li>Helps reduce single-stock risk</li>
         </ul>
-        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
-          <strong>💡 Beginner Tip:</strong> Broad market ETFs like VTI or VOO are often the easiest place to start.
-        </div>
       </div>
     `;
   }
@@ -1743,15 +1674,7 @@ function getLocalAnswer(q) {
   return `
     <div class="aa-body">
       <h4>${escapeHtml(q)}</h4>
-      <p>This topic is part of core investing education. A good beginner framework is:</p>
-      <ul>
-        <li>Understand the concept in plain English</li>
-        <li>Learn how it affects risk and return</li>
-        <li>See how it fits into a portfolio, not just one stock</li>
-      </ul>
-      <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
-        <strong>💡 Beginner Tip:</strong> Ask narrower questions like “What is beta?” or “How do dividends work?” for better explanations.
-      </div>
+      <p>This is part of core investing education. Ask more specific questions like “What is beta?” or “How do dividends work?” for a better answer.</p>
     </div>
   `;
 }
@@ -1787,9 +1710,7 @@ function askAI() {
   }, 350);
 }
 
-/* -----------------------------
-   INIT
------------------------------ */
+/* ---------------- init ---------------- */
 refreshAllData();
 
 document.addEventListener('DOMContentLoaded', () => {
