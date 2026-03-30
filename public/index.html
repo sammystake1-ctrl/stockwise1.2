@@ -1637,22 +1637,25 @@ function quickAsk(el) {
   const aiInput = document.getElementById('aiInput');
   if (aiInput) aiInput.value = raw;
   goPage('learn');
-  setTimeout(() => askAI(), 80);
+  setTimeout(() => askAI(), 100);
 }
 
 function getLocalAnswer(q) {
   const ql = q.toLowerCase();
 
-  if (ql.includes('p/e')) {
+  if (ql.includes('p/e') || ql.includes('price-to-earnings') || ql.includes('price to earnings')) {
     return `
       <div class="aa-body">
         <h4>What is a P/E ratio?</h4>
-        <p><strong>P/E</strong> means <strong>price-to-earnings ratio</strong>. It tells you how much investors are paying for each $1 of company profit.</p>
+        <p><strong>P/E ratio</strong> means <strong>price-to-earnings ratio</strong>. It tells you how much investors are paying for each $1 of a company’s earnings.</p>
         <ul>
-          <li>Lower P/E can suggest cheaper valuation</li>
-          <li>Higher P/E often means higher growth expectations</li>
-          <li>Best compared within the same industry</li>
+          <li>A lower P/E can mean a stock looks cheaper</li>
+          <li>A higher P/E can mean investors expect stronger growth</li>
+          <li>It works best when comparing companies in the same industry</li>
         </ul>
+        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+          <strong>💡 Beginner Tip:</strong> Never use P/E alone. Look at growth, debt, margins, and cash flow too.
+        </div>
       </div>
     `;
   }
@@ -1661,12 +1664,66 @@ function getLocalAnswer(q) {
     return `
       <div class="aa-body">
         <h4>What is an ETF?</h4>
-        <p>An <strong>ETF</strong> is a basket of stocks you buy in one trade. It gives you instant diversification.</p>
+        <p>An <strong>ETF</strong> is a basket of investments you can buy in one trade, just like a stock.</p>
         <ul>
-          <li>Good for beginners</li>
-          <li>Usually low cost</li>
-          <li>Helps reduce single-stock risk</li>
+          <li>It gives you instant diversification</li>
+          <li>It usually has low fees</li>
+          <li>It lowers the risk of picking just one bad stock</li>
         </ul>
+        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+          <strong>💡 Beginner Tip:</strong> Broad ETFs like VTI or VOO are usually the easiest starting point for new investors.
+        </div>
+      </div>
+    `;
+  }
+
+  if (ql.includes('compound')) {
+    return `
+      <div class="aa-body">
+        <h4>How does compound interest work?</h4>
+        <p><strong>Compounding</strong> means your money earns returns, and then those returns also start earning returns.</p>
+        <ul>
+          <li>$1,000 growing at 10% becomes $1,100 after 1 year</li>
+          <li>Next year, you earn 10% on $1,100, not just the original $1,000</li>
+          <li>That is why time matters so much in investing</li>
+        </ul>
+        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+          <strong>💡 Beginner Tip:</strong> Starting early matters more than starting with a huge amount.
+        </div>
+      </div>
+    `;
+  }
+
+  if (ql.includes('dividend')) {
+    return `
+      <div class="aa-body">
+        <h4>How do dividends work?</h4>
+        <p>A <strong>dividend</strong> is cash a company pays to shareholders, usually every quarter.</p>
+        <ul>
+          <li>If you own the stock, you may receive part of the company’s profits</li>
+          <li>Some investors use dividends for income</li>
+          <li>Others reinvest them to buy more shares</li>
+        </ul>
+        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+          <strong>💡 Beginner Tip:</strong> Reinvested dividends can make long-term returns much stronger.
+        </div>
+      </div>
+    `;
+  }
+
+  if (ql.includes('market cap')) {
+    return `
+      <div class="aa-body">
+        <h4>What does market cap mean?</h4>
+        <p><strong>Market cap</strong> means the total market value of a company’s shares.</p>
+        <ul>
+          <li>Large-cap = big, established companies</li>
+          <li>Mid-cap = medium-size businesses</li>
+          <li>Small-cap = smaller companies, usually higher risk and higher potential growth</li>
+        </ul>
+        <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+          <strong>💡 Beginner Tip:</strong> Most beginners should start with larger, more stable companies or broad ETFs.
+        </div>
       </div>
     `;
   }
@@ -1674,7 +1731,15 @@ function getLocalAnswer(q) {
   return `
     <div class="aa-body">
       <h4>${escapeHtml(q)}</h4>
-      <p>This is part of core investing education. Ask more specific questions like “What is beta?” or “How do dividends work?” for a better answer.</p>
+      <p>This is a core investing topic. The best beginner approach is to understand:</p>
+      <ul>
+        <li>what the term means</li>
+        <li>how it affects risk and return</li>
+        <li>how it fits into a portfolio</li>
+      </ul>
+      <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:13px">
+        <strong>💡 Beginner Tip:</strong> Ask narrower questions like “What is beta?” or “How do ETFs work?” for a better explanation.
+      </div>
     </div>
   `;
 }
@@ -1682,24 +1747,31 @@ function getLocalAnswer(q) {
 function askAI() {
   const input = document.getElementById('aiInput');
   const question = input?.value.trim();
+
   if (!question) {
     showToast('Please type a question first');
     return;
   }
 
   const askBtn = document.getElementById('askBtn');
+  const wrap = document.getElementById('aiAnswerWrap');
+  const questionEl = document.getElementById('aaQuestion');
+  const contentEl = document.getElementById('aaContent');
+
   if (askBtn) {
     askBtn.classList.add('ai-asking');
     askBtn.disabled = true;
   }
 
-  const wrap = document.getElementById('aiAnswerWrap');
-  const questionEl = document.getElementById('aaQuestion');
-  const contentEl = document.getElementById('aaContent');
-
   if (questionEl) questionEl.textContent = question;
   if (wrap) wrap.style.display = 'block';
-  if (contentEl) contentEl.innerHTML = `<div class="aa-loading">Thinking…</div>`;
+  if (contentEl) {
+    contentEl.innerHTML = `
+      <div class="aa-loading">
+        Thinking… <span class="dots"><span>●</span><span>●</span><span>●</span></span>
+      </div>
+    `;
+  }
 
   setTimeout(() => {
     if (contentEl) contentEl.innerHTML = getLocalAnswer(question);
